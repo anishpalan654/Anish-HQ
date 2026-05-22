@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Anish HQ">
+<meta name="theme-color" content="#0a0a0a">
+<title>Anish HQ</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0a;--bg2:#141414;--bg3:#1e1e1e;--border:#2a2a2a;--text:#f0f0f0;--text2:#888;--text3:#555;--accent:#c8f135;--blue:#4a9eff;--red:#ff5c5c;--orange:#ff9a3c;--green:#4dde8a;--purple:#b57aff;--radius:12px;--radius-sm:8px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden}
+body{padding-bottom:env(safe-area-inset-bottom)}
+.nav{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-btn{flex:1;padding:14px 8px;text-align:center;font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;border:none;background:none;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap}
+.nav-btn.active{color:var(--accent);border-bottom:2px solid var(--accent)}
+.page-header{padding:20px 16px 12px}
+.page-title{font-size:22px;font-weight:500;letter-spacing:-0.02em}
+.page-sub{font-size:13px;color:var(--text2);margin-top:3px}
+.view{display:none;padding:0 16px 100px}
+.view.active{display:block}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px}
+.card-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
+.card-value{font-size:26px;font-weight:500;font-family:'DM Mono',monospace}
+.card-sub{font-size:12px;color:var(--text2);margin-top:3px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.grid2 .card{margin-bottom:0;}.grid2 .card-value{font-size:20px}
+.quick-add{display:flex;gap:8px;margin-bottom:16px}
+.quick-add input{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none}
+.quick-add input:focus{border-color:var(--accent)}
+.quick-add input::placeholder{color:var(--text3)}
+.add-btn{background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.add-btn:active{opacity:0.8;transform:scale(0.97)}
+.chips{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:13px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif}
+.chip.active{background:var(--accent);color:#0a0a0a;border-color:var(--accent);font-weight:500}
+.item{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;margin-bottom:7px}
+.item-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.item-check.done{background:var(--green);border-color:var(--green)}
+.item-check.done::after{content:'';width:6px;height:6px;background:#0a0a0a;border-radius:50%}
+.item-text{flex:1;font-size:14px;line-height:1.4}
+.item-text.done{text-decoration:line-through;color:var(--text3)}
+.item-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0}
+.tag-task{background:#2a2200;color:var(--orange)}
+.tag-event{background:#0d1f3a;color:var(--blue)}
+.tag-note{background:#1e1a2e;color:var(--purple)}
+.del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:2px;line-height:1}
+.section-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin:16px 0 8px}
+.empty{text-align:center;padding:24px;color:var(--text3);font-size:13px}
+.date-input{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none}
+.earn-form{display:flex;gap:8px;margin-bottom:8px}
+.earn-form input,.earn-form select{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none}
+.earn-form select option{background:var(--bg2)}
+.earn-form input{flex:1}
+.earn-entry{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.earn-source{flex:1;color:var(--text2)}
+.earn-name{font-size:13px;color:var(--text)}
+.earn-note-text{font-size:11px;color:var(--text3)}
+.earn-amt{font-size:14px;font-weight:500;color:var(--green);font-family:'DM Mono',monospace}
+.earn-date{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.schedule-block{border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:8px;border-left:3px solid}
+.block-busy{background:#1a1010;border-color:var(--red)}
+.block-free{background:#0f1a0f;border-color:var(--green)}
+.block-gym{background:#0f1520;border-color:var(--blue)}
+.block-time{font-size:11px;font-family:'DM Mono',monospace;color:var(--text2);margin-bottom:3px}
+.block-label{font-size:14px;font-weight:500}
+.block-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.suggestion{background:linear-gradient(135deg,#141f08,#0a1a0a);border:1px solid #2a3a1a;border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.suggestion-icon{font-size:22px;flex-shrink:0}
+.suggestion-text{flex:1}
+.suggestion-title{font-size:14px;font-weight:500;color:var(--accent)}
+.suggestion-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.sugg-do{background:var(--accent);color:#0a0a0a;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.notify-banner{background:#1a1500;border:1px solid #3a3000;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.notify-banner .nb-text{flex:1;font-size:13px;color:var(--orange)}
+.notify-banner button{background:var(--accent);color:#0a0a0a;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.install-banner{background:#0d1f0d;border:1px solid #1a3a1a;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--green);line-height:1.5}
+.install-banner strong{color:var(--accent)}
+.loading-bar{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.priority-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:6px}
+.p1-dot{background:#ff5c5c}.p2-dot{background:#ff9a3c}.p3-dot{background:#4a9eff}.p4-dot{background:#555}
+.todoist-badge{font-size:10px;padding:2px 7px;border-radius:10px;background:#1a1f2e;color:#4a9eff;margin-left:4px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showView('today')" id="nav-today">◈ Today</button>
+  <button class="nav-btn" onclick="showView('capture')" id="nav-capture">+ Capture</button>
+  <button class="nav-btn" onclick="showView('earnings')" id="nav-earnings">$ Money</button>
+  <button class="nav-btn" onclick="showTokenModal()" id="nav-settings">⚙</button>
+</nav>
+
+<!-- TODOIST TOKEN MODAL -->
+<div id="token-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:300;padding:20px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:420px;margin:80px auto 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-size:16px;font-weight:500">Todoist Setup</span>
+      <button onclick="closeTokenModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">
+      Paste your Todoist API token below. Get it from <strong style="color:var(--text)">todoist.com → Settings → Integrations → API token</strong>.
+    </div>
+    <input type="password" id="token-input" placeholder="Paste API token here" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-size:14px;font-family:'DM Mono',monospace;outline:none;margin-bottom:10px">
+    <div id="token-status" style="font-size:12px;color:var(--text3);margin-bottom:12px;min-height:16px"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="saveToken()" style="flex:1;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Save & connect</button>
+      <button onclick="clearToken()" style="background:var(--bg3);color:var(--red);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- TODAY -->
+<div class="view active" id="view-today">
+  <div class="page-header">
+    <div class="page-title" id="today-greeting">Hey Anish 👋</div>
+    <div class="page-sub" id="today-date"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+      <button onclick="changeDay(-1)" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 14px;color:var(--text);font-size:16px;cursor:pointer">‹</button>
+      <input type="date" id="day-picker" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;text-align:center;outline:none" onchange="onDayPicked()">
+      <button onclick="changeDay(1)" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 14px;color:var(--text);font-size:16px;cursor:pointer">›</button>
+    </div>
+    <button id="back-today-btn" onclick="goToToday()" style="display:none;margin-top:8px;width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px;color:var(--accent);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">↩ Back to today</button>
+  </div>
+  <div id="notify-banner-wrap"></div>
+  <div id="subs-due-banner"></div>
+  <div id="install-hint" class="install-banner" style="display:none"><strong>Add to home screen</strong> for the best experience.<br>Safari → Share → "Add to Home Screen"</div>
+  <div class="section-label">Schedule</div>
+  <div id="today-schedule"></div>
+  <div id="tasks-section-wrap"><div class="section-label">Today's tasks</div><div id="today-tasks"></div></div>
+  <div class="section-label">Suggestions</div>
+  <div id="suggestions"></div>
+  <div class="section-label" id="events-section-label">Upcoming events</div>
+  <div id="today-events"></div>
+</div>
+
+<!-- CAPTURE -->
+<div class="view" id="view-capture">
+  <div class="page-header"><div class="page-title">Capture</div><div class="page-sub">Dump it here. Sort it later.</div></div>
+  <div class="chips">
+    <div class="chip active" id="chip-task" onclick="setType('task')">Task</div>
+    <div class="chip" id="chip-event" onclick="setType('event')">Event</div>
+    <div class="chip" id="chip-note" onclick="setType('note')">Note</div>
+  </div>
+  <div class="quick-add">
+    <input type="text" id="capture-input" placeholder="Type anything fast..." onkeydown="if(event.key==='Enter')addItem()">
+    <button class="add-btn" onclick="addItem()">Add</button>
+  </div>
+  <div id="date-row" style="display:none;margin-bottom:10px">
+    <div style="display:flex;gap:6px;margin-bottom:6px;font-size:12px;color:var(--text3)"><span style="flex:1">Start time</span><span style="flex:1">End time (optional)</span></div>
+    <div style="display:flex;gap:8px">
+      <input type="datetime-local" class="date-input" id="event-date" style="flex:1">
+      <input type="datetime-local" class="date-input" id="event-end" style="flex:1">
+    </div>
+  </div>
+  <input type="text" class="date-input" id="item-location" placeholder="Location (optional)" style="margin-bottom:12px">
+  <div class="section-label">Tasks <span id="todoist-tasks-label" style="color:var(--blue);font-size:10px;display:none">· from Todoist</span></div><div id="list-task"><div class="empty">No tasks yet</div></div>
+  <div class="section-label">Events</div><div id="list-event"><div class="empty">No events yet</div></div>
+  <div class="section-label">Notes</div><div id="list-note"><div class="empty">No notes yet</div></div>
+</div>
+
+<!-- MONEY -->
+<div class="view" id="view-earnings">
+  <div class="page-header"><div class="page-title">Money tracker</div><div class="page-sub" id="money-month-sub">SGD</div></div>
+  <div class="chips" style="margin-bottom:14px">
+    <div class="chip active" id="mchip-overview" onclick="setMoneyTab('overview')">Overview</div>
+    <div class="chip" id="mchip-income" onclick="setMoneyTab('income')">Income</div>
+    <div class="chip" id="mchip-spend" onclick="setMoneyTab('spend')">Spending</div>
+    <div class="chip" id="mchip-subs" onclick="setMoneyTab('subs')">Subscriptions</div>
+    <div class="chip" id="mchip-cpf" onclick="setMoneyTab('cpf')">CPF</div>
+    <div class="chip" id="mchip-summary" onclick="setMoneyTab('summary')">Summary</div>
+  </div>
+
+  <div id="mtab-overview">
+    <div class="card" style="margin-bottom:10px;border:1px solid #2a3a1a">
+      <div class="card-label" id="overview-month-label">This month net</div>
+      <div class="card-value" id="overview-net" style="font-size:32px">$0</div>
+      <div class="card-sub">received this month − spent this month</div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="card-label">Received</div><div class="card-value" id="overview-month-received" style="color:var(--green)">$0</div></div>
+      <div class="card"><div class="card-label">Spent</div><div class="card-value" id="overview-spent" style="color:var(--red)">$0</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="card-label">Cash in hand</div><div class="card-value" id="overview-paid">$0</div><div class="card-sub">all time received</div></div>
+      <div class="card"><div class="card-label">Pending</div><div class="card-value" id="overview-pending" style="color:var(--orange)">$0</div><div class="card-sub">not paid yet</div></div>
+    </div>
+    <div id="overview-pending-section"></div>
+  </div>
+
+  <div id="mtab-income" style="display:none">
+    <div class="grid2">
+      <div class="card"><div class="card-label" id="month-label2">This month</div><div class="card-value" id="month-earned">$0</div></div>
+      <div class="card"><div class="card-label">All time</div><div class="card-value" id="total-earned">$0</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="card-label">Wingstop</div><div class="card-value" id="earn-wingstop">$0</div></div>
+      <div class="card"><div class="card-label">Trading</div><div class="card-value" id="earn-trading">$0</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="card-label">Side hustle</div><div class="card-value" id="earn-side">$0</div></div>
+      <div class="card"><div class="card-label">Other</div><div class="card-value" id="earn-other">$0</div></div>
+    </div>
+    <div class="section-label">Log income</div>
+    <div class="earn-form">
+      <input type="number" id="earn-amount" placeholder="SGD amount" step="0.01" min="0">
+      <select id="earn-source">
+        <option value="Wingstop">Wingstop</option>
+        <option value="Trading">Trading</option>
+        <option value="Side hustle">Side hustle</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="earn-form">
+      <input type="text" id="earn-note" placeholder="Note (optional)" style="flex:2;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none">
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:6px;font-size:12px;color:var(--text3)"><span style="flex:1">Work date</span><span style="flex:1">Pay date (optional)</span></div>
+    <div class="earn-form">
+      <input type="date" id="earn-date" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;outline:none">
+      <input type="date" id="earn-paydate" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;outline:none">
+    </div>
+    <button class="add-btn" style="width:100%;margin:8px 0 14px" onclick="addEarning()">Log income</button>
+    <div class="section-label">History</div>
+    <div id="earn-log"><div class="empty">No income logged yet</div></div>
+  </div>
+
+  <div id="mtab-spend" style="display:none">
+    <div class="grid2">
+      <div class="card"><div class="card-label">This month spent</div><div class="card-value" id="month-spend">$0</div></div>
+      <div class="card"><div class="card-label">Net this month</div><div class="card-value" id="month-net">$0</div></div>
+    </div>
+    <div class="section-label">By category</div>
+    <div id="spend-by-cat"></div>
+    <div class="section-label" style="margin-top:16px">Log spending</div>
+    <div class="earn-form">
+      <input type="number" id="spend-amount" placeholder="SGD amount" step="0.01" min="0">
+      <select id="spend-cat">
+        <option value="Food">Food</option>
+        <option value="Transport">Transport</option>
+        <option value="Shopping">Shopping</option>
+        <option value="Entertainment">Entertainment</option>
+        <option value="Health">Health</option>
+        <option value="Subscriptions">Subscriptions</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="earn-form">
+      <input type="date" id="spend-date" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;outline:none">
+      <input type="text" id="spend-note" placeholder="What was it?" style="flex:1.5;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none">
+    </div>
+    <button class="add-btn" style="width:100%;margin:8px 0 14px" onclick="addSpend()">Log spending</button>
+    <div class="section-label">History</div>
+    <div id="spend-log"><div class="empty">No spending logged yet</div></div>
+  </div>
+
+  <div id="mtab-subs" style="display:none">
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-label">Monthly commitments</div>
+      <div class="card-value" id="subs-total">$0</div>
+      <div class="card-sub">SGD / month</div>
+    </div>
+    <div class="section-label">Add subscription</div>
+    <div class="earn-form">
+      <input type="text" id="sub-name" placeholder="e.g. Claude, phone bill" style="flex:2;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none">
+      <input type="number" id="sub-amount" placeholder="$/mo" step="0.01" min="0">
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Billing day of month (e.g. 11)</div>
+    <div class="earn-form">
+      <input type="number" id="sub-day" placeholder="Day (1-31)" min="1" max="31" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;outline:none">
+    </div>
+    <button class="add-btn" style="width:100%;margin:8px 0 14px" onclick="addSub()">Add subscription</button>
+    <div class="section-label">Active subscriptions</div>
+    <div id="subs-list"><div class="empty">No subscriptions yet</div></div>
+  </div>
+
+  <div id="mtab-cpf" style="display:none">
+    <div class="card" style="margin-bottom:10px;border:1px solid #1a1a3a">
+      <div class="card-label">Total CPF contributed</div>
+      <div class="card-value" id="cpf-total" style="color:var(--purple)">$0</div>
+      <div class="card-sub">20% employee · your money, held by CPF</div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="card-label">This year</div><div class="card-value" id="cpf-year" style="color:var(--purple)">$0</div></div>
+      <div class="card"><div class="card-label">This month</div><div class="card-value" id="cpf-month" style="color:var(--purple)">$0</div></div>
+    </div>
+    <div class="section-label">CPF history</div>
+    <div id="cpf-log"><div class="empty">No CPF contributions yet</div></div>
+  </div>
+
+  <div id="mtab-summary" style="display:none">
+    <div class="section-label">Month by month</div>
+    <div id="monthly-summary"><div class="empty">Log income or spending to see summary</div></div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div id="edit-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;padding:20px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:420px;margin:60px auto 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:16px;font-weight:500">Edit event</span>
+      <button onclick="closeEditModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <input type="text" id="edit-text" placeholder="Event name" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:10px">
+    <div style="display:flex;gap:6px;margin-bottom:6px;font-size:12px;color:var(--text3)"><span style="flex:1">Start</span><span style="flex:1">End</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input type="datetime-local" id="edit-start" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;outline:none">
+      <input type="datetime-local" id="edit-end" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;outline:none">
+    </div>
+    <input type="text" id="edit-location" placeholder="Location (optional)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:14px">
+    <div style="display:flex;gap:8px">
+      <button onclick="saveEditModal()" style="flex:1;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
+      <button onclick="deleteEditModal()" style="flex:1;background:var(--bg3);color:var(--red);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://ldwrmslneeugnbfwnysl.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxkd3Jtc2xuZWV1Z25iZndueXNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODMwMzYsImV4cCI6MjA5NDg1OTAzNn0.veppG37-DZswX606lktrtRkwx7JY7Bi9KXCTdPIKEOg';
+const H = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+
+// ── TODOIST ──
+const TODOIST_URL = 'https://api.todoist.com/api/v1';
+let todoistToken = localStorage.getItem('anish_todoist_token') || '';
+let todoistTasks = [];
+
+async function todoistGet(path) {
+  if(!todoistToken) return null;
+  try {
+    const r = await fetch(TODOIST_URL+path, {method:'GET', headers:{'Authorization':'Bearer '+todoistToken}, mode:'cors', credentials:'omit'});
+    return r.ok ? r.json() : null;
+  } catch(e) { console.error('Todoist GET error',e); return null; }
+}
+
+async function todoistPost(path, body) {
+  if(!todoistToken) return null;
+  try {
+    const r = await fetch(TODOIST_URL+path, {method:'POST', headers:{'Authorization':'Bearer '+todoistToken,'Content-Type':'application/json'}, mode:'cors', credentials:'omit', body:JSON.stringify(body)});
+    return r.ok ? r.json() : null;
+  } catch(e) { console.error('Todoist POST error',e); return null; }
+}
+
+async function todoistClose(id) {
+  if(!todoistToken) return;
+  try { await fetch(TODOIST_URL+'/tasks/'+id+'/close', {method:'POST', headers:{'Authorization':'Bearer '+todoistToken}, mode:'cors', credentials:'omit'}); }
+  catch(e) {}
+}
+
+async function todoistDelete(id) {
+  if(!todoistToken) return;
+  try { await fetch(TODOIST_URL+'/tasks/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+todoistToken}, mode:'cors', credentials:'omit'}); }
+  catch(e) {}
+}
+
+async function loadTodoistTasks() {
+  if(!todoistToken) { todoistTasks=[]; return; }
+  const data = await todoistGet('/tasks/filter?query=today%7Coverdue');
+  if(data && Array.isArray(data.results||data)) {
+    const tasks = data.results || data;
+    todoistTasks = tasks.map(t=>({
+      id:'td_'+t.id, _todoistId:t.id, type:'task', text:t.content,
+      done:false, date:null, endDate:null, location:'', created:'',
+      priority:t.priority, projectId:t.project_id
+    }));
+  } else { todoistTasks=[]; }
+}
+
+// priority: todoist uses 4=p1, 3=p2, 2=p3, 1=p4
+function priorityDot(p) {
+  const map={4:'p1-dot',3:'p2-dot',2:'p3-dot',1:'p4-dot'};
+  const label={4:'p1',3:'p2',2:'p3',1:'p4'};
+  return `<span class="priority-dot ${map[p]||'p4-dot'}" title="${label[p]||'p4'}"></span>`;
+}
+
+// Token modal
+function showTokenModal(){
+  document.getElementById('token-input').value=todoistToken;
+  document.getElementById('token-status').textContent=todoistToken?'✓ Token saved':'No token set';
+  document.getElementById('token-status').style.color=todoistToken?'var(--green)':'var(--text3)';
+  document.getElementById('token-modal').style.display='block';
+}
+function closeTokenModal(){document.getElementById('token-modal').style.display='none';}
+async function saveToken(){
+  const val=document.getElementById('token-input').value.trim();
+  if(!val)return;
+  const el=document.getElementById('token-status');
+  el.textContent='Testing...';el.style.color='var(--text3)';
+  try {
+    const r=await fetch(TODOIST_URL+'/tasks/filter?query=today', {method:'GET', headers:{'Authorization':'Bearer '+val}, mode:'cors', credentials:'omit'});
+    if(r.ok){
+      todoistToken=val;localStorage.setItem('anish_todoist_token',val);
+      el.textContent='✓ Connected!';el.style.color='var(--green)';
+      await loadTodoistTasks();renderToday();renderItems();
+      setTimeout(closeTokenModal,800);
+    } else {
+      el.textContent='✗ Invalid token — check and retry';el.style.color='var(--red)';
+    }
+  } catch(e){el.textContent='✗ Network error';el.style.color='var(--red)';}
+}
+function clearToken(){
+  todoistToken='';localStorage.removeItem('anish_todoist_token');
+  todoistTasks=[];
+  document.getElementById('token-input').value='';
+  document.getElementById('token-status').textContent='Token cleared';
+  document.getElementById('token-status').style.color='var(--text3)';
+  renderToday();renderItems();
+}
+
+async function dbGet(table) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?order=id.desc`,{headers:{...H,'Prefer':'return=representation'}});
+  return r.ok ? r.json() : [];
+}
+async function dbInsert(table, row) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(row)});
+  return r.ok ? r.json() : null;
+}
+async function dbUpdate(table, id, row) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(row)});
+  return r.ok ? r.json() : null;
+}
+async function dbDelete(table, id) {
+  await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`,{method:'DELETE',headers:H});
+}
+
+// ── STATE ──
+let items=[], earnings=[], spending=[], subscriptions=[];
+let currentType='task', currentMoneyTab='overview', viewingDate=new Date(), editingId=null;
+let notifGranted = localStorage.getItem('anish_notif')==='granted';
+
+// ── LOAD ──
+async function loadAll() {
+  document.getElementById('today-schedule').innerHTML='<div class="loading-bar">Loading...</div>';
+  const [supaResults] = await Promise.all([
+    Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions')]),
+    loadTodoistTasks()
+  ]);
+  [items, earnings, spending, subscriptions] = supaResults;
+  // normalize field names from snake_case
+  items = items.map(i=>({...i, endDate:i.end_date, done:i.done||false}));
+  earnings = earnings.map(e=>({...e, grossAmount:e.gross_amount, cpfAmount:e.cpf_amount, cpfReconciled:e.cpf_reconciled, cpfNote:e.cpf_note, payDate:e.pay_date}));
+  spending = spending.map(s=>({...s}));
+  subscriptions = subscriptions.map(s=>({...s, billingDay:s.billing_day, lastLogged:s.last_logged}));
+  renderToday(); renderItems(); renderEarnings(); checkSubsDue();
+}
+
+// ── NAV ──
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('nav-'+v).classList.add('active');
+  if(v==='today') renderToday();
+  if(v==='earnings') renderEarnings();
+  if(v==='capture') renderItems();
+}
+
+// ── DAY NAV ──
+function goToToday(){viewingDate=new Date();document.getElementById('day-picker').value=toPickerVal(viewingDate);document.getElementById('back-today-btn').style.display='none';renderToday();}
+function changeDay(d){viewingDate=new Date(viewingDate);viewingDate.setDate(viewingDate.getDate()+d);document.getElementById('day-picker').value=toPickerVal(viewingDate);document.getElementById('back-today-btn').style.display=viewingDate.toDateString()===new Date().toDateString()?'none':'block';renderToday();}
+function onDayPicked(){const v=document.getElementById('day-picker').value;if(!v)return;viewingDate=new Date(v+'T00:00:00');document.getElementById('back-today-btn').style.display=viewingDate.toDateString()===new Date().toDateString()?'none':'block';renderToday();}
+function toPickerVal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function toLocalDateStr(d){const dt=new Date(d);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+
+// ── TODAY ──
+function renderToday(){
+  const now=new Date();
+  const isToday=viewingDate.toDateString()===now.toDateString();
+  const h=now.getHours();
+  const greet=h<12?'Good morning':h<17?'Hey':'Evening';
+  document.getElementById('today-greeting').textContent=isToday?greet+', Anish 👋':viewingDate.toLocaleDateString('en-SG',{weekday:'long'});
+  document.getElementById('today-date').textContent=viewingDate.toLocaleDateString('en-SG',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('day-picker').value=toPickerVal(viewingDate);
+  const isIOS=/iphone|ipad/i.test(navigator.userAgent)&&!window.navigator.standalone;
+  document.getElementById('install-hint').style.display=isIOS?'block':'none';
+  if(window.navigator.standalone)document.getElementById('install-hint').style.display='none';
+  renderNotifBanner();
+  document.getElementById('tasks-section-wrap').style.display=isToday?'block':'none';
+  document.getElementById('events-section-label').textContent=isToday?'Upcoming events':'Events this day';
+  const viewingDateStr=toPickerVal(viewingDate);
+  const todayEvents=items.filter(i=>{if(!i.date)return false;return toLocalDateStr(i.date)===viewingDateStr;}).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  renderSchedule(todayEvents,isToday,now);
+  renderSuggestions(todayEvents,isToday,now);
+  if(isToday){
+    const el=document.getElementById('today-tasks');
+    if(todoistToken && todoistTasks.length) {
+      el.innerHTML=todoistTasks.slice(0,8).map(it=>todoistItemHTML(it)).join('');
+    } else if(todoistToken) {
+      el.innerHTML='<div class="empty">No tasks due today 🎉</div>';
+    } else {
+      // fallback: show supabase tasks if no todoist connected
+      const tasks=items.filter(i=>i.type==='task'&&!i.done);
+      el.innerHTML=tasks.length?tasks.slice(0,5).map(it=>itemHTML(it)).join(''):'<div class="empty">No pending tasks — tap ⚙ to connect Todoist</div>';
+    }
+  }
+  const upcoming=isToday?items.filter(i=>i.type==='event'&&i.date&&new Date(i.date)>=now).sort((a,b)=>new Date(a.date)-new Date(b.date)):items.filter(i=>i.type==='event'&&i.date&&toLocalDateStr(i.date)===viewingDateStr).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const evEl=document.getElementById('today-events');
+  evEl.innerHTML=upcoming.length?upcoming.slice(0,5).map(it=>itemHTML(it)).join(''):'<div class="empty">No events</div>';
+}
+
+function renderSchedule(todayEvents,isToday,now){
+  const isWeekday=viewingDate.getDay()>=1&&viewingDate.getDay()<=5;
+  const gymAvail=isWeekday;
+  const runCutoff=new Date(viewingDate);runCutoff.setHours(20,50,0,0);
+  const runAvail=isToday?now<runCutoff:true;
+  const schedEl=document.getElementById('today-schedule');
+  let html='';
+  if(!todayEvents.length){
+    if(gymAvail)html+=`<div class="schedule-block block-gym"><div class="block-time">07:00 – 16:00</div><div class="block-label">Gym window open</div><div class="block-sub">ActiveSG — weekday only</div></div>`;
+    if(runAvail)html+=`<div class="schedule-block" style="background:#0f1520;border-left:3px solid var(--blue)"><div class="block-time">07:00 – 21:30 · start by 20:50</div><div class="block-label">Running track open</div><div class="block-sub">Daily · near your house</div></div>`;
+    html+=`<div class="schedule-block block-free"><div class="block-time">All day</div><div class="block-label">Looks like a free day</div><div class="block-sub">Add events in Capture to map your day</div></div>`;
+  } else {
+    const dayStart=new Date(viewingDate);dayStart.setHours(7,0,0,0);
+    const dayEnd=new Date(viewingDate);dayEnd.setHours(23,59,0,0);
+    const busy=todayEvents.map(ev=>({start:new Date(ev.date),end:ev.endDate?new Date(ev.endDate):new Date(new Date(ev.date).getTime()+3600000),label:ev.text,location:ev.location,id:ev.id}));
+    let cursor=isToday&&now>dayStart?now:dayStart;
+    const blocks=[];
+    busy.forEach(b=>{if(b.start>cursor)blocks.push({type:'free',start:cursor,end:b.start});if(b.end>cursor){blocks.push({type:'busy',...b});cursor=b.end;}});
+    if(cursor<dayEnd)blocks.push({type:'free',start:cursor,end:dayEnd});
+    blocks.forEach(b=>{
+      const s=b.start.toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'});
+      const e=b.end.toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'});
+      const dh=Math.floor((b.end-b.start)/3600000);
+      const dm=Math.floor(((b.end-b.start)%3600000)/60000);
+      const dur=dh>0?`${dh}h${dm>0?' '+dm+'m':''}`:dm+'m';
+      if(b.type==='free'){
+        const isGym=gymAvail&&b.start.getHours()<16&&(b.end-b.start)>=3600000;
+        const isRun=runAvail&&b.start<runCutoff&&(b.end-b.start)>=3600000;
+        let sub=isGym&&isRun?'Gym + running track available':isGym?'ActiveSG open':isRun?'Running track open':'';
+        html+=`<div class="schedule-block ${isGym?'block-gym':'block-free'}"><div class="block-time">${s} – ${e}</div><div class="block-label">${dur} free${isGym?' · gym':isRun?' · run':''}</div>${sub?`<div class="block-sub">${sub}</div>`:''}</div>`;
+      } else {
+        html+=`<div class="schedule-block block-busy" onclick="openEditModal(${b.id})" style="cursor:pointer"><div class="block-time">${s} – ${e}</div><div style="display:flex;justify-content:space-between;align-items:center"><div class="block-label">${b.label}</div><span style="font-size:11px;color:var(--text3)">tap to edit</span></div><div class="block-sub">${b.location?'📍 '+b.location+' · ':''}${dur}</div></div>`;
+      }
+    });
+  }
+  schedEl.innerHTML=html;
+}
+
+function renderSuggestions(todayEvents,isToday,now){
+  const h=now.getHours();
+  const isWeekday=viewingDate.getDay()>=1&&viewingDate.getDay()<=5;
+  const suggestions=[];
+  const first=todayEvents.length?new Date(todayEvents[0].date):null;
+  const freeH=first?(first-now)/3600000:8;
+  if(isWeekday&&h<15&&(!first||(first-now)>5400000))suggestions.push({icon:'🏋️',title:'Hit the gym',sub:'ActiveSG window open till 4pm'});
+  if(h<20)suggestions.push({icon:'🏃',title:'Go for a run',sub:h<9?'Morning run — best time':'Track open, start by 8:50pm'});
+  suggestions.push({icon:'📈',title:'Trading study session',sub:'Review charts, watch one video on technical analysis'});
+  if(freeH>3)suggestions.push({icon:'💻',title:'Side hustle block',sub:`You have ${Math.floor(freeH)}h free — good time to research passive income`});
+  const el=document.getElementById('suggestions');
+  el.innerHTML=suggestions.slice(0,3).map(s=>`<div class="suggestion"><div class="suggestion-icon">${s.icon}</div><div class="suggestion-text"><div class="suggestion-title">${s.title}</div><div class="suggestion-sub">${s.sub}</div></div><button class="sugg-do" onclick="quickAdd('${s.title}')">Do it</button></div>`).join('');
+}
+
+async function quickAdd(text){
+  if(todoistToken) {
+    const result = await todoistPost('/tasks', {content:text, due_string:'today'});
+    if(result) {
+      todoistTasks.unshift({
+        id:'td_'+result.id, _todoistId:result.id, type:'task', text:result.content,
+        done:false, date:null, endDate:null, location:'', created:'',
+        priority:result.priority||1, projectId:result.project_id
+      });
+    }
+  } else {
+    const entry={id:Date.now(),type:'task',text,done:false,date:null,end_date:null,location:'',created:new Date().toLocaleDateString('en-SG',{day:'numeric',month:'short'})};
+    await dbInsert('items',entry);
+    items.unshift({...entry,endDate:null});
+  }
+  renderToday();
+}
+
+// ── NOTIFICATIONS ──
+function renderNotifBanner(){
+  const wrap=document.getElementById('notify-banner-wrap');
+  if(notifGranted||!('Notification' in window)){wrap.innerHTML='';return;}
+  wrap.innerHTML=`<div class="notify-banner"><span class="nb-text">Enable reminders so this app can nudge you</span><button onclick="requestNotif()">Enable</button></div>`;
+}
+function requestNotif(){
+  if(!('Notification' in window))return;
+  Notification.requestPermission().then(p=>{if(p==='granted'){notifGranted=true;localStorage.setItem('anish_notif','granted');renderNotifBanner();new Notification('Anish HQ',{body:"You're all set!"});}});
+}
+
+// ── CAPTURE ──
+function setType(t){
+  currentType=t;
+  ['task','event','note'].forEach(x=>{document.getElementById('chip-'+x).className='chip'+(t===x?' active':'');});
+  document.getElementById('date-row').style.display=t==='event'?'block':'none';
+}
+
+async function addItem(){
+  const inp=document.getElementById('capture-input');
+  const text=inp.value.trim();
+  if(!text)return;
+  if(currentType==='task' && todoistToken) {
+    // push to Todoist
+    const result = await todoistPost('/tasks', {content:text, due_string:'today'});
+    if(result) {
+      todoistTasks.unshift({
+        id:'td_'+result.id, _todoistId:result.id, type:'task', text:result.content,
+        done:false, date:null, endDate:null, location:'', created:'',
+        priority:result.priority||1, projectId:result.project_id
+      });
+    }
+    inp.value='';
+    renderToday(); renderItems();
+    return;
+  }
+  // events/notes (or tasks if no Todoist) go to Supabase
+  const entry={id:Date.now(),type:currentType,text,done:false,
+    date:currentType==='event'?document.getElementById('event-date').value:null,
+    end_date:currentType==='event'?document.getElementById('event-end').value:null,
+    location:document.getElementById('item-location').value.trim(),
+    created:new Date().toLocaleDateString('en-SG',{day:'numeric',month:'short'})};
+  await dbInsert('items',entry);
+  items.unshift({...entry,endDate:entry.end_date});
+  inp.value='';document.getElementById('item-location').value='';
+  if(currentType==='event'){document.getElementById('event-date').value='';document.getElementById('event-end').value='';}
+  renderItems();renderToday();
+}
+
+async function toggleDone(id){
+  const it=items.find(x=>x.id===id);
+  if(!it)return;
+  it.done=!it.done;
+  await dbUpdate('items',id,{done:it.done});
+  renderItems();renderToday();
+}
+
+async function deleteItem(id){
+  items=items.filter(x=>x.id!==id);
+  await dbDelete('items',id);
+  renderItems();renderToday();
+}
+
+function todoistItemHTML(it) {
+  const p = it.priority||1;
+  return `<div class="item">
+    <div class="item-check" onclick="closeTodoistTask('${it._todoistId}',this)"></div>
+    <div class="item-text" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+      ${priorityDot(p)}${it.text}<span class="todoist-badge">Todoist</span>
+    </div>
+    <button class="del-btn" onclick="deleteTodoistTask('${it._todoistId}')">×</button>
+  </div>`;
+}
+
+async function closeTodoistTask(todoistId, el) {
+  el.classList.add('done');
+  el.closest('.item').querySelector('.item-text').classList.add('done');
+  await todoistClose(todoistId);
+  todoistTasks = todoistTasks.filter(t=>t._todoistId!==todoistId);
+  renderToday();
+}
+
+async function deleteTodoistTask(todoistId) {
+  await todoistDelete(todoistId);
+  todoistTasks = todoistTasks.filter(t=>t._todoistId!==todoistId);
+  renderToday(); renderItems();
+}
+
+function itemHTML(it){
+  return `<div class="item">
+    ${it.type==='task'?`<div class="item-check${it.done?' done':''}" onclick="toggleDone(${it.id})"></div>`:''}
+    <div class="item-text${it.done?' done':''}">
+      ${it.text}
+      ${it.date?`<div class="item-meta">📅 ${new Date(it.date).toLocaleString('en-SG',{dateStyle:'medium',timeStyle:'short'})}${it.endDate?' – '+new Date(it.endDate).toLocaleTimeString('en-SG',{timeStyle:'short'}):''}</div>`:''}
+      ${it.location?`<div class="item-meta">📍 ${it.location}</div>`:''}
+      ${it.type!=='task'?`<div class="item-meta">${it.created}</div>`:''}
+    </div>
+    <span class="tag tag-${it.type}">${it.type}</span>
+    <button class="del-btn" onclick="deleteItem(${it.id})">×</button>
+  </div>`;
+}
+
+function renderItems(){
+  // Tasks: show Todoist tasks if connected, else Supabase tasks
+  const taskEl=document.getElementById('list-task');
+  const label=document.getElementById('todoist-tasks-label');
+  if(todoistToken && todoistTasks.length>0) {
+    label.style.display='inline';
+    taskEl.innerHTML=todoistTasks.map(it=>todoistItemHTML(it)).join('');
+  } else if(todoistToken) {
+    label.style.display='inline';
+    taskEl.innerHTML='<div class="empty">No tasks due today</div>';
+  } else {
+    label.style.display='none';
+    const tasks=items.filter(x=>x.type==='task');
+    taskEl.innerHTML=tasks.length?tasks.map(it=>itemHTML(it)).join(''):'<div class="empty">No tasks yet — tap ⚙ to connect Todoist</div>';
+  }
+  // Events and notes stay on Supabase
+  ['event','note'].forEach(type=>{
+    const list=items.filter(x=>x.type===type);
+    const el=document.getElementById('list-'+type);
+    el.innerHTML=list.length?list.map(it=>itemHTML(it)).join(''):`<div class="empty">No ${type}s yet</div>`;
+  });
+}
+
+// ── EDIT MODAL ──
+function openEditModal(id){
+  const it=items.find(x=>x.id===id);if(!it)return;
+  editingId=id;
+  document.getElementById('edit-text').value=it.text;
+  document.getElementById('edit-start').value=it.date||'';
+  document.getElementById('edit-end').value=it.endDate||'';
+  document.getElementById('edit-location').value=it.location||'';
+  document.getElementById('edit-modal').style.display='block';
+}
+function closeEditModal(){document.getElementById('edit-modal').style.display='none';editingId=null;}
+async function saveEditModal(){
+  const it=items.find(x=>x.id===editingId);if(!it)return;
+  it.text=document.getElementById('edit-text').value.trim()||it.text;
+  it.date=document.getElementById('edit-start').value;
+  it.endDate=document.getElementById('edit-end').value;
+  it.location=document.getElementById('edit-location').value.trim();
+  await dbUpdate('items',editingId,{text:it.text,date:it.date,end_date:it.endDate,location:it.location});
+  closeEditModal();renderToday();renderItems();
+}
+async function deleteEditModal(){
+  items=items.filter(x=>x.id!==editingId);
+  await dbDelete('items',editingId);
+  closeEditModal();renderToday();renderItems();
+}
+
+// ── MONEY ──
+function setMoneyTab(t){
+  currentMoneyTab=t;
+  ['overview','income','spend','subs','cpf','summary'].forEach(x=>{
+    document.getElementById('mchip-'+x).className='chip'+(t===x?' active':'');
+    document.getElementById('mtab-'+x).style.display=t===x?'block':'none';
+  });
+  renderEarnings();
+}
+
+async function addEarning(){
+  const gross=parseFloat(document.getElementById('earn-amount').value);
+  if(!gross||gross<=0)return;
+  const src=document.getElementById('earn-source').value;
+  const cpf=src==='Wingstop'?parseFloat((gross*0.20).toFixed(2)):0;
+  const net=src==='Wingstop'?parseFloat((gross-cpf).toFixed(2)):gross;
+  const dateVal=document.getElementById('earn-date').value;
+  const payVal=document.getElementById('earn-paydate').value;
+  const dateStr=dateVal?new Date(dateVal).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}):new Date().toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+  const dateTs=dateVal?new Date(dateVal).getTime():Date.now();
+  let resolvedPay=payVal;
+  if(!resolvedPay&&src==='Wingstop'){
+    const wd=dateVal?new Date(dateVal):new Date();
+    const pd=new Date(wd.getFullYear(),wd.getMonth()+1,7);
+    resolvedPay=pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0')+'-'+String(pd.getDate()).padStart(2,'0');
+  }
+  const payStr=resolvedPay?new Date(resolvedPay).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}):null;
+  const paid=resolvedPay?new Date(resolvedPay)<=new Date():true;
+  const row={id:Date.now(),ts:dateTs,amount:net,gross_amount:src==='Wingstop'?gross:null,cpf_amount:src==='Wingstop'?cpf:null,cpf_reconciled:false,source:src,note:document.getElementById('earn-note').value.trim(),date:dateStr,pay_date:payStr,paid};
+  await dbInsert('earnings',row);
+  earnings.unshift({...row,grossAmount:row.gross_amount,cpfAmount:row.cpf_amount,cpfReconciled:false,payDate:row.pay_date});
+  document.getElementById('earn-amount').value='';document.getElementById('earn-note').value='';
+  document.getElementById('earn-date').value='';document.getElementById('earn-paydate').value='';
+  renderEarnings();
+}
+
+async function deleteEarning(id){
+  earnings=earnings.filter(x=>x.id!==id);
+  await dbDelete('earnings',id);renderEarnings();
+}
+
+async function markPaid(id){
+  const e=earnings.find(x=>x.id===id);if(!e)return;
+  e.paid=true;e.payDate=new Date().toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+  if(e.source==='Wingstop'&&!e.cpfReconciled){
+    const samePeriod=earnings.filter(x=>x.source==='Wingstop'&&x.paid);
+    const totalGross=samePeriod.reduce((s,x)=>s+(x.grossAmount||x.amount),0);
+    if(totalGross<750){e.amount=e.grossAmount||e.amount;e.cpfAmount=0;}
+    e.cpfReconciled=true;
+  }
+  await dbUpdate('earnings',id,{paid:true,pay_date:e.payDate,amount:e.amount,cpf_amount:e.cpfAmount,cpf_reconciled:e.cpfReconciled});
+  renderEarnings();
+}
+
+async function markAllSourcePaid(source){
+  const unpaid=earnings.filter(e=>e.source===source&&!e.paid);
+  if(source==='Wingstop'){
+    const totalGross=unpaid.reduce((s,e)=>s+(e.grossAmount||e.amount),0);
+    for(const e of unpaid){
+      e.paid=true;e.payDate=new Date().toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+      if(!e.cpfReconciled){
+        if(totalGross<750){e.amount=e.grossAmount||e.amount;e.cpfAmount=0;}
+        e.cpfReconciled=true;
+      }
+      await dbUpdate('earnings',e.id,{paid:true,pay_date:e.payDate,amount:e.amount,cpf_amount:e.cpfAmount,cpf_reconciled:e.cpfReconciled});
+    }
+  } else {
+    for(const e of unpaid){
+      e.paid=true;e.payDate=new Date().toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+      await dbUpdate('earnings',e.id,{paid:true,pay_date:e.payDate});
+    }
+  }
+  renderEarnings();
+}
+
+async function addSpend(){
+  const amt=parseFloat(document.getElementById('spend-amount').value);
+  if(!amt||amt<=0)return;
+  const dateVal=document.getElementById('spend-date').value;
+  const dateStr=dateVal?new Date(dateVal).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}):new Date().toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+  const ts=dateVal?new Date(dateVal).getTime():Date.now();
+  const row={id:Date.now(),ts,amount:amt,category:document.getElementById('spend-cat').value,note:document.getElementById('spend-note').value.trim(),date:dateStr};
+  await dbInsert('spending',row);spending.unshift(row);
+  document.getElementById('spend-amount').value='';document.getElementById('spend-note').value='';document.getElementById('spend-date').value='';
+  renderEarnings();
+}
+
+async function deleteSpend(id){spending=spending.filter(x=>x.id!==id);await dbDelete('spending',id);renderEarnings();}
+
+async function addSub(){
+  const name=document.getElementById('sub-name').value.trim();
+  const amt=parseFloat(document.getElementById('sub-amount').value);
+  const day=parseInt(document.getElementById('sub-day').value)||null;
+  if(!name||!amt||amt<=0)return;
+  const row={id:Date.now(),name,amount:amt,billing_day:day,last_logged:null};
+  await dbInsert('subscriptions',row);
+  subscriptions.unshift({...row,billingDay:day,lastLogged:null});
+  document.getElementById('sub-name').value='';document.getElementById('sub-amount').value='';document.getElementById('sub-day').value='';
+  renderEarnings();checkSubsDue();
+}
+
+async function deleteSub(id){subscriptions=subscriptions.filter(x=>x.id!==id);await dbDelete('subscriptions',id);renderEarnings();}
+
+async function logSubAsSpent(id){
+  const s=subscriptions.find(x=>x.id===id);if(!s)return;
+  const now=new Date();
+  const row={id:Date.now(),ts:Date.now(),amount:s.amount,category:'Subscriptions',note:s.name,date:now.toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'})};
+  await dbInsert('spending',row);spending.unshift(row);
+  s.lastLogged=Date.now();s.last_logged=s.lastLogged;
+  await dbUpdate('subscriptions',id,{last_logged:s.lastLogged});
+  checkSubsDue();renderEarnings();
+}
+
+function checkSubsDue(){
+  const now=new Date();const today=now.getDate();const curM=now.getMonth();const curY=now.getFullYear();
+  const due=subscriptions.filter(s=>{
+    if(!s.billingDay)return false;
+    if(today<s.billingDay)return false;
+    if(!s.lastLogged)return true;
+    const last=new Date(s.lastLogged);
+    return!(last.getMonth()===curM&&last.getFullYear()===curY);
+  });
+  const wrap=document.getElementById('subs-due-banner');if(!wrap)return;
+  wrap.innerHTML=due.map(s=>`<div class="notify-banner"><span class="nb-text"><strong>${s.name}</strong> ($${s.amount.toFixed(2)}) due on the ${s.billingDay}th — log as spent?</span><button onclick="logSubAsSpent(${s.id})">Log it</button></div>`).join('');
+}
+
+function renderEarnings(){
+  const now=new Date();const curM=now.getMonth();const curY=now.getFullYear();
+  const inMonth=ts=>{const d=new Date(ts);return d.getMonth()===curM&&d.getFullYear()===curY;};
+  document.getElementById('month-label2').textContent=now.toLocaleString('en-SG',{month:'long'});
+  const totalAll=earnings.reduce((s,e)=>s+e.amount,0);
+  const totalPaid=earnings.filter(e=>e.paid!==false).reduce((s,e)=>s+e.amount,0);
+  const totalPending=earnings.filter(e=>e.paid===false).reduce((s,e)=>s+e.amount,0);
+  const monthSpendAmt=spending.filter(s=>inMonth(s.ts||s.id)).reduce((s,e)=>s+e.amount,0);
+  const monthReceived=earnings.filter(e=>e.paid!==false&&inMonth(e.ts||e.id)).reduce((s,e)=>s+e.amount,0);
+  const monthNet=monthReceived-monthSpendAmt;
+  // Overview
+  document.getElementById('overview-month-label').textContent=now.toLocaleString('en-SG',{month:'long'})+' net';
+  document.getElementById('overview-net').textContent=(monthNet>=0?'+':'')+'$'+Math.abs(monthNet).toFixed(2);
+  document.getElementById('overview-net').style.color=monthNet>=0?'var(--green)':'var(--red)';
+  document.getElementById('overview-month-received').textContent='$'+monthReceived.toFixed(2);
+  document.getElementById('overview-spent').textContent='$'+monthSpendAmt.toFixed(2);
+  document.getElementById('overview-paid').textContent='$'+totalPaid.toFixed(2);
+  document.getElementById('overview-pending').textContent='$'+totalPending.toFixed(2);
+  // Pending section
+  const pendingEntries=earnings.filter(e=>e.paid===false);
+  const wsPending=pendingEntries.filter(e=>e.source==='Wingstop');
+  let pendHTML='';
+  if(pendingEntries.length){
+    pendHTML='<div class="section-label" style="margin-top:16px">Pending breakdown</div>';
+    if(wsPending.length){
+      const wpT=wsPending.reduce((s,e)=>s+e.amount,0);
+      pendHTML+=`<div class="card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:14px;font-weight:500">Wingstop</div><div style="font-size:12px;color:var(--text3)">${wsPending.length} shift(s) unpaid</div></div><div style="text-align:right"><div style="font-size:16px;font-weight:500;color:var(--orange)">$${wpT.toFixed(2)}</div><button onclick="markAllSourcePaid('Wingstop')" style="font-size:11px;padding:3px 10px;border-radius:6px;background:var(--accent);color:#0a0a0a;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px">Mark all paid</button></div></div></div>`;
+    }
+    pendingEntries.filter(e=>e.source!=='Wingstop').forEach(e=>{
+      pendHTML+=`<div class="earn-entry"><div class="earn-source"><div class="earn-name">${e.source}</div><div class="earn-note-text">Worked: ${e.date}${e.payDate?' · Pay: '+e.payDate:''}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="earn-amt">$${e.amount.toFixed(2)}</div><button onclick="markPaid(${e.id})" style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--accent);color:#0a0a0a;border:none;cursor:pointer;font-family:'DM Sans',sans-serif">Mark paid</button></div></div>`;
+    });
+  } else pendHTML='<div class="empty" style="margin-top:16px">No pending payments 🎉</div>';
+  document.getElementById('overview-pending-section').innerHTML=pendHTML;
+  // Income tab
+  const monthIncome=earnings.filter(e=>inMonth(e.ts||e.id)).reduce((s,e)=>s+e.amount,0);
+  const by=src=>earnings.filter(e=>inMonth(e.ts||e.id)&&e.source===src).reduce((s,e)=>s+e.amount,0);
+  document.getElementById('total-earned').textContent='$'+totalAll.toFixed(2);
+  document.getElementById('month-earned').textContent='$'+monthIncome.toFixed(2);
+  document.getElementById('earn-wingstop').textContent='$'+by('Wingstop').toFixed(2);
+  document.getElementById('earn-trading').textContent='$'+by('Trading').toFixed(2);
+  document.getElementById('earn-side').textContent='$'+by('Side hustle').toFixed(2);
+  document.getElementById('earn-other').textContent='$'+by('Other').toFixed(2);
+  const pendBanner=totalPending>0?`<div style="background:#1a1200;border:1px solid #3a2800;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:10px;font-size:13px;color:var(--orange)">⏳ $${totalPending.toFixed(2)} pending payment</div>`:'';
+  document.getElementById('earn-log').innerHTML=pendBanner+(earnings.length?earnings.map(e=>{
+    const badge=e.paid===false?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#1a1200;color:var(--orange);margin-left:4px">pending</span>`:`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#0a1a0a;color:var(--green);margin-left:4px">paid</span>`;
+    return `<div class="earn-entry"><div class="earn-source"><div class="earn-name" style="display:flex;align-items:center">${e.source}${badge}</div>${e.note?`<div class="earn-note-text">${e.note}</div>`:''}<div class="earn-note-text">Worked: ${e.date}</div>${e.payDate?`<div class="earn-note-text">Pay date: ${e.payDate}</div>`:''}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="earn-amt">+$${e.amount.toFixed(2)}</div>${e.paid===false?`<button onclick="markPaid(${e.id})" style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--accent);color:#0a0a0a;border:none;cursor:pointer;font-family:'DM Sans',sans-serif">Mark paid</button>`:''}</div><button class="del-btn" onclick="deleteEarning(${e.id})">×</button></div>`;
+  }).join(''):'<div class="empty">No income logged yet</div>');
+  // Spending
+  document.getElementById('month-spend').textContent='$'+monthSpendAmt.toFixed(2);
+  const mnet=monthReceived-monthSpendAmt;
+  document.getElementById('month-net').textContent=(mnet>=0?'+':'')+mnet.toFixed(2);
+  document.getElementById('month-net').style.color=mnet>=0?'var(--green)':'var(--red)';
+  const cats=['Food','Transport','Shopping','Entertainment','Health','Subscriptions','Other'];
+  const mSpend=spending.filter(s=>inMonth(s.ts||s.id));
+  const catEl=document.getElementById('spend-by-cat');
+  catEl.innerHTML=mSpend.length?cats.map(cat=>{const amt=mSpend.filter(s=>s.category===cat).reduce((s,e)=>s+e.amount,0);if(!amt)return'';const pct=Math.round((amt/monthSpendAmt)*100);return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--text2)">${cat}</span><span style="font-weight:500">$${amt.toFixed(2)} <span style="color:var(--text3);font-weight:400">${pct}%</span></span></div><div style="height:4px;background:var(--bg3);border-radius:2px"><div style="height:4px;width:${pct}%;background:var(--accent);border-radius:2px"></div></div></div>`;}).join(''):'<div class="empty">No spending this month</div>';
+  document.getElementById('spend-log').innerHTML=spending.length?spending.map(s=>`<div class="earn-entry"><div class="earn-source"><div class="earn-name">${s.category}</div>${s.note?`<div class="earn-note-text">${s.note}</div>`:''}</div><div class="earn-amt" style="color:var(--red)">-$${s.amount.toFixed(2)}</div><div class="earn-date">${s.date}</div><button class="del-btn" onclick="deleteSpend(${s.id})">×</button></div>`).join(''):'<div class="empty">No spending logged yet</div>';
+  // Subs
+  const subsTotal=subscriptions.reduce((s,x)=>s+x.amount,0);
+  document.getElementById('subs-total').textContent='$'+subsTotal.toFixed(2);
+  document.getElementById('subs-list').innerHTML=subscriptions.length?subscriptions.map(s=>`<div class="earn-entry"><div class="earn-source"><div class="earn-name">${s.name}</div>${s.billingDay?`<div class="earn-note-text">Renews on the ${s.billingDay}th</div>`:''}</div><div class="earn-amt" style="color:var(--orange)">$${s.amount.toFixed(2)}/mo</div><button class="del-btn" onclick="deleteSub(${s.id})">×</button></div>`).join(''):'<div class="empty">No subscriptions yet</div>';
+  // CPF
+  const cpfEntries=earnings.filter(e=>e.cpfAmount);
+  document.getElementById('cpf-total').textContent='$'+cpfEntries.reduce((s,e)=>s+e.cpfAmount,0).toFixed(2);
+  document.getElementById('cpf-year').textContent='$'+cpfEntries.filter(e=>new Date(e.ts||e.id).getFullYear()===curY).reduce((s,e)=>s+e.cpfAmount,0).toFixed(2);
+  document.getElementById('cpf-month').textContent='$'+cpfEntries.filter(e=>inMonth(e.ts||e.id)).reduce((s,e)=>s+e.cpfAmount,0).toFixed(2);
+  document.getElementById('cpf-log').innerHTML=cpfEntries.length?cpfEntries.map(e=>`<div class="earn-entry"><div class="earn-source"><div class="earn-name">${e.source}</div><div class="earn-note-text">Gross: $${e.grossAmount.toFixed(2)} · Net: $${e.amount.toFixed(2)}</div><div class="earn-note-text">${e.date}</div></div><div class="earn-amt" style="color:var(--purple)">$${e.cpfAmount.toFixed(2)}</div></div>`).join(''):'<div class="empty">No CPF contributions yet</div>';
+  // Summary
+  const allMonths={};
+  earnings.forEach(e=>{const d=new Date(e.ts||e.id);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!allMonths[k])allMonths[k]={label:d.toLocaleString('en-SG',{month:'short',year:'numeric'}),income:0,spend:0};allMonths[k].income+=e.amount;});
+  spending.forEach(s=>{const d=new Date(s.ts||s.id);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!allMonths[k])allMonths[k]={label:d.toLocaleString('en-SG',{month:'short',year:'numeric'}),income:0,spend:0};allMonths[k].spend+=s.amount;});
+  const sorted=Object.keys(allMonths).sort().reverse();
+  document.getElementById('monthly-summary').innerHTML=sorted.length?sorted.map(k=>{const m=allMonths[k];const n=m.income-m.spend;return`<div class="card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-weight:500;font-size:14px">${m.label}</span><span style="font-size:13px;color:${n>=0?'var(--green)':'var(--red)'}">${n>=0?'+':''}$${n.toFixed(2)} net</span></div><div style="display:flex;gap:16px;font-size:13px"><span style="color:var(--green)">+$${m.income.toFixed(2)}</span><span style="color:var(--red)">-$${m.spend.toFixed(2)}</span></div></div>`;}).join(''):'<div class="empty">Log income or spending to see summary</div>';
+}
+
+// ── INIT ──
+loadAll();
+</script>
+</body>
+</html>
