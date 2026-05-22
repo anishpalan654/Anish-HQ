@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -510,9 +510,10 @@ function renderSchedule(todayEvents,isToday,now){
   const schedEl=document.getElementById('today-schedule');
   let html='';
   if(!todayEvents.length){
-    if(gymAvail)html+=`<div class="schedule-block block-gym"><div class="block-time">07:00 – 16:00</div><div class="block-label">Gym window open</div><div class="block-sub">ActiveSG — weekday only</div></div>`;
+    const gymEnd=new Date(viewingDate);gymEnd.setHours(16,0,0,0);
+    if(gymAvail&&(!isToday||now<gymEnd))html+=`<div class="schedule-block block-gym"><div class="block-time">07:00 – 16:00</div><div class="block-label">Gym window open</div><div class="block-sub">ActiveSG — weekday only</div></div>`;
     if(runAvail)html+=`<div class="schedule-block" style="background:#0f1520;border-left:3px solid var(--blue)"><div class="block-time">07:00 – 21:30 · start by 20:50</div><div class="block-label">Running track open</div><div class="block-sub">Daily · near your house</div></div>`;
-    html+=`<div class="schedule-block block-free"><div class="block-time">All day</div><div class="block-label">Looks like a free day</div><div class="block-sub">Add events in Capture to map your day</div></div>`;
+    html+=`<div class="schedule-block block-free"><div class="block-time">${isToday?now.toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'})+' onwards':'All day'}</div><div class="block-label">Looks like a free day</div><div class="block-sub">Add events in Capture to map your day</div></div>`;
   } else {
     const dayStart=new Date(viewingDate);dayStart.setHours(7,0,0,0);
     const dayEnd=new Date(viewingDate);dayEnd.setHours(23,59,0,0);
