@@ -224,10 +224,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
       <div class="card"><div class="card-label">Received</div><div class="card-value" id="overview-month-received" style="color:var(--green)">$0</div></div>
       <div class="card"><div class="card-label">Spent</div><div class="card-value" id="overview-spent" style="color:var(--red)">$0</div></div>
     </div>
-    <div class="grid2">
-      <div class="card"><div class="card-label">Cash in hand</div><div class="card-value" id="overview-paid">$0</div><div class="card-sub">all time received</div></div>
-      <div class="card"><div class="card-label">Pending</div><div class="card-value" id="overview-pending" style="color:var(--orange)">$0</div><div class="card-sub">not paid yet</div></div>
-    </div>
+    <div class="card"><div class="card-label">Pending</div><div class="card-value" id="overview-pending" style="color:var(--orange)">$0</div><div class="card-sub">not paid yet</div></div>
     <div id="overview-pending-section"></div>
 
     <div class="card" style="margin-top:16px;margin-bottom:10px;border:1px solid #2a3a1a;cursor:pointer" onclick="openTargetModal()">
@@ -1138,7 +1135,6 @@ function renderEarnings(){
   document.getElementById('overview-net').style.color=monthNet>=0?'var(--green)':'var(--red)';
   document.getElementById('overview-month-received').textContent='$'+monthReceived.toFixed(2);
   document.getElementById('overview-spent').textContent='$'+monthSpendAmt.toFixed(2);
-  document.getElementById('overview-paid').textContent='$'+totalPaid.toFixed(2);
   document.getElementById('overview-pending').textContent='$'+totalPending.toFixed(2);
   // Pending section
   const pendingEntries=earnings.filter(e=>e.paid===false);
