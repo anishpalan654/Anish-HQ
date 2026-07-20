@@ -170,11 +170,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   <div id="notify-banner-wrap"></div>
   <div id="subs-due-banner"></div>
   <div id="install-hint" class="install-banner" style="display:none"><strong>Add to home screen</strong> for the best experience.<br>Safari → Share → "Add to Home Screen"</div>
-  <div class="section-label">Schedule</div>
-  <div id="today-schedule"></div>
-  <div id="tasks-section-wrap"><div class="section-label">Today's tasks</div><div id="today-tasks"></div></div>
-  <div class="section-label">Suggestions</div>
-  <div id="suggestions"></div>
+  <div id="tasks-section-wrap"><div class="section-label">To do list</div><div id="today-tasks"></div></div>
   <div class="section-label" id="events-section-label">Upcoming events</div>
   <div id="today-events"></div>
 </div>
@@ -526,7 +522,7 @@ let notifGranted = localStorage.getItem('anish_notif')==='granted';
 
 // ── LOAD ──
 async function loadAll() {
-  document.getElementById('today-schedule').innerHTML='<div class="loading-bar">Loading...</div>';
+  document.getElementById('today-tasks').innerHTML='<div class="loading-bar">Loading...</div>';
   const [supaResults] = await Promise.all([
     Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions'), dbGet('income_goals'), dbGet('savings_goals'), dbGet('savings_contributions')]),
     loadTodoistTasks()
@@ -708,8 +704,6 @@ function renderToday(){
   document.getElementById('events-section-label').textContent=isToday?'Upcoming events':'Events this day';
   const viewingDateStr=toPickerVal(viewingDate);
   const todayEvents=items.filter(i=>{if(!i.date)return false;return toLocalDateStr(i.date)===viewingDateStr;}).sort((a,b)=>new Date(a.date)-new Date(b.date));
-  renderSchedule(todayEvents,isToday,now);
-  renderSuggestions(todayEvents,isToday,now);
   if(isToday){
     const el=document.getElementById('today-tasks');
     if(todoistToken && todoistTasks.length) {
