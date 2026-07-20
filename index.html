@@ -85,6 +85,9 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 .priority-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:6px}
 .p1-dot{background:#ff5c5c}.p2-dot{background:#ff9a3c}.p3-dot{background:#4a9eff}.p4-dot{background:#555}
 .todoist-badge{font-size:10px;padding:2px 7px;border-radius:10px;background:#1a1f2e;color:#4a9eff;margin-left:4px;flex-shrink:0}
+.quick-log-row{display:flex;gap:8px;margin-top:12px}
+.ql-btn{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.ql-btn:active{opacity:0.8;transform:scale(0.97)}
 </style>
 </head>
 <body>
@@ -115,6 +118,39 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   </div>
 </div>
 
+<!-- QUICK LOG MODAL -->
+<div id="quick-log-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;padding:20px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:420px;margin:100px auto 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:16px;font-weight:500" id="ql-title">Log</span>
+      <button onclick="closeQuickLog()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <input type="number" id="ql-amount" placeholder="SGD amount" step="0.01" min="0" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-size:16px;font-family:'DM Mono',monospace;outline:none;margin-bottom:10px">
+    <div id="ql-source-row" style="display:none;margin-bottom:10px">
+      <select id="ql-source" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none">
+        <option value="Wingstop">Wingstop</option>
+        <option value="Trading">Trading</option>
+        <option value="Side hustle">Side hustle</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div id="ql-cat-row" style="display:none;margin-bottom:10px">
+      <select id="ql-cat" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none">
+        <option value="Food">Food</option>
+        <option value="Transport">Transport</option>
+        <option value="Shopping">Shopping</option>
+        <option value="Entertainment">Entertainment</option>
+        <option value="Health">Health</option>
+        <option value="Subscriptions">Subscriptions</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <input type="text" id="ql-note" placeholder="Note (optional)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:14px">
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Logged for today · edit full details anytime in the Money tab</div>
+    <button onclick="submitQuickLog()" style="width:100%;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
+  </div>
+</div>
+
 <!-- TODAY -->
 <div class="view active" id="view-today">
   <div class="page-header">
@@ -124,6 +160,10 @@ body{padding-bottom:env(safe-area-inset-bottom)}
       <button onclick="changeDay(-1)" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 14px;color:var(--text);font-size:16px;cursor:pointer">‹</button>
       <input type="date" id="day-picker" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;text-align:center;outline:none" onchange="onDayPicked()">
       <button onclick="changeDay(1)" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 14px;color:var(--text);font-size:16px;cursor:pointer">›</button>
+    </div>
+    <div class="quick-log-row">
+      <button class="ql-btn" style="color:var(--green)" onclick="openQuickLog('income')">+ Income</button>
+      <button class="ql-btn" style="color:var(--red)" onclick="openQuickLog('expense')">+ Expense</button>
     </div>
     <button id="back-today-btn" onclick="goToToday()" style="display:none;margin-top:8px;width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px;color:var(--accent);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">↩ Back to today</button>
   </div>
@@ -172,8 +212,6 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <div class="chip" id="mchip-income" onclick="setMoneyTab('income')">Income</div>
     <div class="chip" id="mchip-spend" onclick="setMoneyTab('spend')">Spending</div>
     <div class="chip" id="mchip-subs" onclick="setMoneyTab('subs')">Subscriptions</div>
-    <div class="chip" id="mchip-cpf" onclick="setMoneyTab('cpf')">CPF</div>
-    <div class="chip" id="mchip-summary" onclick="setMoneyTab('summary')">Summary</div>
   </div>
 
   <div id="mtab-overview">
@@ -191,6 +229,30 @@ body{padding-bottom:env(safe-area-inset-bottom)}
       <div class="card"><div class="card-label">Pending</div><div class="card-value" id="overview-pending" style="color:var(--orange)">$0</div><div class="card-sub">not paid yet</div></div>
     </div>
     <div id="overview-pending-section"></div>
+
+    <div class="card" style="margin-top:16px;margin-bottom:10px;border:1px solid #2a3a1a;cursor:pointer" onclick="openTargetModal()">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1">
+          <div class="card-label" id="target-month-label">Month target</div>
+          <div class="card-value" id="target-current-of-target" style="font-size:24px">$0 <span style="font-size:14px;color:var(--text3);font-weight:400">/ $0</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);white-space:nowrap;margin-top:4px">tap to edit ›</div>
+      </div>
+      <div style="height:6px;background:var(--bg3);border-radius:3px;margin-top:10px"><div id="target-progress-bar" style="height:6px;width:0%;background:var(--accent);border-radius:3px"></div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:10px;cursor:pointer" onclick="openSavingsModal()">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1">
+          <div class="card-label">Savings goals</div>
+          <div class="card-value" id="savings-total-display" style="font-size:24px;color:var(--purple)">$0 <span style="font-size:14px;color:var(--text3);font-weight:400">/ $0</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);white-space:nowrap;margin-top:4px">tap to view ›</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:20px">Month by month</div>
+    <div id="monthly-summary"><div class="empty">Log income or spending to see summary</div></div>
   </div>
 
   <div id="mtab-income" style="display:none">
@@ -227,6 +289,18 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <button class="add-btn" style="width:100%;margin:8px 0 14px" onclick="addEarning()">Log income</button>
     <div class="section-label">History</div>
     <div id="earn-log"><div class="empty">No income logged yet</div></div>
+
+    <div class="section-label" style="margin-top:20px">CPF contributed</div>
+    <div class="card" style="margin-bottom:10px;border:1px solid #1a1a3a">
+      <div class="card-label">Total CPF contributed</div>
+      <div class="card-value" id="cpf-total" style="color:var(--purple)">$0</div>
+      <div class="card-sub">20% employee · your money, held by CPF</div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="card-label">This year</div><div class="card-value" id="cpf-year" style="color:var(--purple)">$0</div></div>
+      <div class="card"><div class="card-label">This month</div><div class="card-value" id="cpf-month" style="color:var(--purple)">$0</div></div>
+    </div>
+    <div id="cpf-log"><div class="empty">No CPF contributions yet</div></div>
   </div>
 
   <div id="mtab-spend" style="display:none">
@@ -277,25 +351,6 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <div class="section-label">Active subscriptions</div>
     <div id="subs-list"><div class="empty">No subscriptions yet</div></div>
   </div>
-
-  <div id="mtab-cpf" style="display:none">
-    <div class="card" style="margin-bottom:10px;border:1px solid #1a1a3a">
-      <div class="card-label">Total CPF contributed</div>
-      <div class="card-value" id="cpf-total" style="color:var(--purple)">$0</div>
-      <div class="card-sub">20% employee · your money, held by CPF</div>
-    </div>
-    <div class="grid2">
-      <div class="card"><div class="card-label">This year</div><div class="card-value" id="cpf-year" style="color:var(--purple)">$0</div></div>
-      <div class="card"><div class="card-label">This month</div><div class="card-value" id="cpf-month" style="color:var(--purple)">$0</div></div>
-    </div>
-    <div class="section-label">CPF history</div>
-    <div id="cpf-log"><div class="empty">No CPF contributions yet</div></div>
-  </div>
-
-  <div id="mtab-summary" style="display:none">
-    <div class="section-label">Month by month</div>
-    <div id="monthly-summary"><div class="empty">Log income or spending to see summary</div></div>
-  </div>
 </div>
 
 <!-- EDIT MODAL -->
@@ -316,6 +371,45 @@ body{padding-bottom:env(safe-area-inset-bottom)}
       <button onclick="saveEditModal()" style="flex:1;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
       <button onclick="deleteEditModal()" style="flex:1;background:var(--bg3);color:var(--red);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Delete</button>
     </div>
+  </div>
+</div>
+
+<!-- TARGET MODAL -->
+<div id="target-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;padding:20px;overflow-y:auto">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:420px;margin:60px auto 40px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:16px;font-weight:500">Monthly target</span>
+      <button onclick="closeTargetModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Target amount (SGD)</div>
+    <input type="number" id="target-amount-input" placeholder="e.g. 800" step="0.01" min="0" oninput="renderTargetBreakdownList()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-size:16px;font-family:'DM Mono',monospace;outline:none;margin-bottom:14px">
+    <div class="section-label">What it's for</div>
+    <div id="target-breakdown-list"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input type="text" id="target-line-label" placeholder="e.g. Food & transport" style="flex:2;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none">
+      <input type="number" id="target-line-amount" placeholder="$" step="0.01" min="0" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none">
+      <button onclick="addTargetLine()" style="background:var(--bg3);border:1px solid var(--border);color:var(--accent);border-radius:var(--radius-sm);padding:10px 14px;font-size:16px;cursor:pointer">+</button>
+    </div>
+    <div id="target-breakdown-sum-note" style="font-size:12px;color:var(--text3);margin:10px 0 16px"></div>
+    <button onclick="saveTargetAmount()" style="width:100%;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Save target</button>
+  </div>
+</div>
+
+<!-- SAVINGS MODAL -->
+<div id="savings-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;padding:20px;overflow-y:auto">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:420px;margin:60px auto 40px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:16px;font-weight:500">Savings goals</span>
+      <button onclick="closeSavingsModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
+    </div>
+    <div id="savings-goals-list"></div>
+    <div class="section-label" style="margin-top:16px">Add a goal</div>
+    <input type="text" id="new-goal-name" placeholder="e.g. China trip" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:8px">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input type="number" id="new-goal-amount" placeholder="Target $" step="0.01" min="0" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none">
+      <input type="date" id="new-goal-deadline" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;outline:none">
+    </div>
+    <button onclick="addSavingsGoal()" style="width:100%;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Add goal</button>
   </div>
 </div>
 
@@ -429,6 +523,7 @@ async function dbDelete(table, id) {
 
 // ── STATE ──
 let items=[], earnings=[], spending=[], subscriptions=[];
+let incomeGoals=[], savingsGoals=[], savingsContributions=[], currentGoal=null;
 let currentType='task', currentMoneyTab='overview', viewingDate=new Date(), editingId=null;
 let notifGranted = localStorage.getItem('anish_notif')==='granted';
 
@@ -436,16 +531,149 @@ let notifGranted = localStorage.getItem('anish_notif')==='granted';
 async function loadAll() {
   document.getElementById('today-schedule').innerHTML='<div class="loading-bar">Loading...</div>';
   const [supaResults] = await Promise.all([
-    Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions')]),
+    Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions'), dbGet('income_goals'), dbGet('savings_goals'), dbGet('savings_contributions')]),
     loadTodoistTasks()
   ]);
-  [items, earnings, spending, subscriptions] = supaResults;
+  [items, earnings, spending, subscriptions, incomeGoals, savingsGoals, savingsContributions] = supaResults;
   // normalize field names from snake_case
   items = items.map(i=>({...i, endDate:i.end_date, done:i.done||false}));
   earnings = earnings.map(e=>({...e, grossAmount:e.gross_amount, cpfAmount:e.cpf_amount, cpfReconciled:e.cpf_reconciled, cpfNote:e.cpf_note, payDate:e.pay_date}));
   spending = spending.map(s=>({...s}));
   subscriptions = subscriptions.map(s=>({...s, billingDay:s.billing_day, lastLogged:s.last_logged}));
+  incomeGoals = incomeGoals.map(g=>({...g, target_amount:Number(g.target_amount), breakdown:g.breakdown||[]}));
+  savingsGoals = savingsGoals.map(g=>({...g, target_amount:Number(g.target_amount)}));
+  savingsContributions = savingsContributions.map(c=>({...c, amount:Number(c.amount)}));
+  await ensureCurrentGoal();
   renderToday(); renderItems(); renderEarnings(); checkSubsDue();
+}
+
+// ── MONTHLY TARGET (carries over automatically) ──
+function currentMonthKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+
+async function ensureCurrentGoal(){
+  const key=currentMonthKey();
+  let g=incomeGoals.find(x=>x.month===key);
+  if(!g){
+    const sorted=incomeGoals.slice().sort((a,b)=>b.month.localeCompare(a.month));
+    const prev=sorted[0];
+    g={id:Date.now(),month:key,target_amount:prev?prev.target_amount:0,breakdown:prev?JSON.parse(JSON.stringify(prev.breakdown||[])):[],created_at:Date.now()};
+    await dbInsert('income_goals',g);
+    incomeGoals.unshift(g);
+  }
+  currentGoal=g;
+}
+
+function openTargetModal(){
+  document.getElementById('target-amount-input').value=currentGoal.target_amount||'';
+  renderTargetBreakdownList();
+  document.getElementById('target-modal').style.display='block';
+}
+function closeTargetModal(){document.getElementById('target-modal').style.display='none';}
+
+function renderTargetBreakdownList(){
+  const list=currentGoal.breakdown||[];
+  const el=document.getElementById('target-breakdown-list');
+  el.innerHTML=list.length?list.map((b,i)=>`<div class="earn-entry"><div class="earn-source">${b.label}</div><div class="earn-amt">$${Number(b.amount).toFixed(2)}</div><button class="del-btn" onclick="removeTargetLine(${i})">×</button></div>`).join(''):'<div class="empty">No breakdown yet</div>';
+  const sum=list.reduce((s,b)=>s+Number(b.amount),0);
+  const target=Number(document.getElementById('target-amount-input').value)||currentGoal.target_amount||0;
+  const diff=target-sum;
+  document.getElementById('target-breakdown-sum-note').textContent = list.length ? `Allocated $${sum.toFixed(2)} of $${target.toFixed(2)}` + (Math.abs(diff)>0.001 ? (diff>0?` — $${diff.toFixed(2)} unallocated`:` — $${Math.abs(diff).toFixed(2)} over`) : ' — fully allocated') : '';
+}
+
+async function addTargetLine(){
+  const label=document.getElementById('target-line-label').value.trim();
+  const amount=parseFloat(document.getElementById('target-line-amount').value);
+  if(!label||!amount||amount<=0)return;
+  currentGoal.breakdown=currentGoal.breakdown||[];
+  currentGoal.breakdown.push({label,amount});
+  document.getElementById('target-line-label').value='';
+  document.getElementById('target-line-amount').value='';
+  await dbUpdate('income_goals',currentGoal.id,{breakdown:currentGoal.breakdown});
+  renderTargetBreakdownList();
+}
+
+async function removeTargetLine(i){
+  currentGoal.breakdown.splice(i,1);
+  await dbUpdate('income_goals',currentGoal.id,{breakdown:currentGoal.breakdown});
+  renderTargetBreakdownList();
+}
+
+async function saveTargetAmount(){
+  const amt=parseFloat(document.getElementById('target-amount-input').value)||0;
+  currentGoal.target_amount=amt;
+  await dbUpdate('income_goals',currentGoal.id,{target_amount:amt});
+  closeTargetModal();
+  renderEarnings();
+}
+
+// ── SAVINGS GOALS (manual contributions) ──
+function openSavingsModal(){
+  renderSavingsGoalsList();
+  document.getElementById('savings-modal').style.display='block';
+}
+function closeSavingsModal(){document.getElementById('savings-modal').style.display='none';}
+
+function renderSavingsGoalsList(){
+  const el=document.getElementById('savings-goals-list');
+  el.innerHTML = savingsGoals.length ? savingsGoals.map(g=>{
+    const saved=savingsContributions.filter(c=>c.goal_id===g.id).reduce((s,c)=>s+c.amount,0);
+    const pct=g.target_amount>0?Math.min(100,Math.round((saved/g.target_amount)*100)):0;
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:14px;font-weight:500">${g.name}</div>
+          ${g.deadline?`<div class="earn-note-text">by ${g.deadline}</div>`:''}
+        </div>
+        <button class="del-btn" onclick="deleteSavingsGoal(${g.id})">×</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:8px">
+        <span class="card-value" style="font-size:18px;color:var(--purple)">$${saved.toFixed(2)}</span>
+        <span style="font-size:12px;color:var(--text3)">of $${Number(g.target_amount).toFixed(2)}</span>
+      </div>
+      <div style="height:5px;background:var(--bg3);border-radius:3px;margin-top:6px"><div style="height:5px;width:${pct}%;background:var(--purple);border-radius:3px"></div></div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <input type="number" id="contrib-amt-${g.id}" placeholder="Add amount" step="0.01" min="0" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none">
+        <button onclick="addContribution(${g.id})" style="background:var(--accent);color:#0a0a0a;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Add</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty">No savings goals yet — add one below</div>';
+}
+
+async function addSavingsGoal(){
+  const name=document.getElementById('new-goal-name').value.trim();
+  const amount=parseFloat(document.getElementById('new-goal-amount').value);
+  const deadlineVal=document.getElementById('new-goal-deadline').value;
+  if(!name||!amount||amount<=0)return;
+  const deadlineStr=deadlineVal?new Date(deadlineVal).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}):null;
+  const row={id:Date.now(),name,target_amount:amount,deadline:deadlineStr,created_at:Date.now()};
+  await dbInsert('savings_goals',row);
+  savingsGoals.unshift(row);
+  document.getElementById('new-goal-name').value='';
+  document.getElementById('new-goal-amount').value='';
+  document.getElementById('new-goal-deadline').value='';
+  renderSavingsGoalsList();
+  renderEarnings();
+}
+
+async function deleteSavingsGoal(id){
+  savingsGoals=savingsGoals.filter(g=>g.id!==id);
+  savingsContributions=savingsContributions.filter(c=>c.goal_id!==id);
+  await dbDelete('savings_goals',id);
+  renderSavingsGoalsList();
+  renderEarnings();
+}
+
+async function addContribution(goalId){
+  const input=document.getElementById('contrib-amt-'+goalId);
+  const amt=parseFloat(input.value);
+  if(!amt||amt<=0)return;
+  const now=new Date();
+  const row={id:Date.now(),goal_id:goalId,amount:amt,date:now.toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}),ts:Date.now(),note:''};
+  await dbInsert('savings_contributions',row);
+  savingsContributions.unshift(row);
+  input.value='';
+  renderSavingsGoalsList();
+  renderEarnings();
 }
 
 // ── NAV ──
@@ -582,6 +810,49 @@ function renderNotifBanner(){
 function requestNotif(){
   if(!('Notification' in window))return;
   Notification.requestPermission().then(p=>{if(p==='granted'){notifGranted=true;localStorage.setItem('anish_notif','granted');renderNotifBanner();new Notification('Anish HQ',{body:"You're all set!"});}});
+}
+
+// ── QUICK LOG (Today page shortcuts) ──
+let quickLogType='expense';
+function openQuickLog(type){
+  quickLogType=type;
+  document.getElementById('ql-title').textContent=type==='income'?'Log income':'Log expense';
+  document.getElementById('ql-source-row').style.display=type==='income'?'block':'none';
+  document.getElementById('ql-cat-row').style.display=type==='expense'?'block':'none';
+  document.getElementById('ql-amount').value='';
+  document.getElementById('ql-note').value='';
+  document.getElementById('quick-log-modal').style.display='block';
+  setTimeout(()=>document.getElementById('ql-amount').focus(),50);
+}
+function closeQuickLog(){document.getElementById('quick-log-modal').style.display='none';}
+async function submitQuickLog(){
+  const amt=parseFloat(document.getElementById('ql-amount').value);
+  if(!amt||amt<=0)return;
+  const note=document.getElementById('ql-note').value.trim();
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+  if(quickLogType==='income'){
+    const src=document.getElementById('ql-source').value;
+    const gross=amt;
+    const cpf=src==='Wingstop'?parseFloat((gross*0.20).toFixed(2)):0;
+    const net=src==='Wingstop'?parseFloat((gross-cpf).toFixed(2)):gross;
+    let payStr=null, paid=true;
+    if(src==='Wingstop'){
+      const pd=new Date(now.getFullYear(),now.getMonth()+1,7);
+      payStr=pd.toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+      paid=pd<=now;
+    }
+    const row={id:Date.now(),ts:Date.now(),amount:net,gross_amount:src==='Wingstop'?gross:null,cpf_amount:src==='Wingstop'?cpf:null,cpf_reconciled:false,source:src,note,date:dateStr,pay_date:payStr,paid};
+    await dbInsert('earnings',row);
+    earnings.unshift({...row,grossAmount:row.gross_amount,cpfAmount:row.cpf_amount,cpfReconciled:false,payDate:row.pay_date});
+  } else {
+    const cat=document.getElementById('ql-cat').value;
+    const row={id:Date.now(),ts:Date.now(),amount:amt,category:cat,note,date:dateStr};
+    await dbInsert('spending',row);
+    spending.unshift(row);
+  }
+  closeQuickLog();
+  renderToday();renderEarnings();
 }
 
 // ── CAPTURE ──
@@ -727,7 +998,7 @@ async function deleteEditModal(){
 // ── MONEY ──
 function setMoneyTab(t){
   currentMoneyTab=t;
-  ['overview','income','spend','subs','cpf','summary'].forEach(x=>{
+  ['overview','income','spend','subs'].forEach(x=>{
     document.getElementById('mchip-'+x).className='chip'+(t===x?' active':'');
     document.getElementById('mtab-'+x).style.display=t===x?'block':'none';
   });
@@ -860,6 +1131,7 @@ function renderEarnings(){
   const monthSpendAmt=spending.filter(s=>inMonth(s.ts||s.id)).reduce((s,e)=>s+e.amount,0);
   const monthReceived=earnings.filter(e=>e.paid!==false&&inMonth(e.ts||e.id)).reduce((s,e)=>s+e.amount,0);
   const monthNet=monthReceived-monthSpendAmt;
+  const monthIncome=earnings.filter(e=>inMonth(e.ts||e.id)).reduce((s,e)=>s+e.amount,0);
   // Overview
   document.getElementById('overview-month-label').textContent=now.toLocaleString('en-SG',{month:'long'})+' net';
   document.getElementById('overview-net').textContent=(monthNet>=0?'+':'')+'$'+Math.abs(monthNet).toFixed(2);
@@ -883,8 +1155,19 @@ function renderEarnings(){
     });
   } else pendHTML='<div class="empty" style="margin-top:16px">No pending payments 🎉</div>';
   document.getElementById('overview-pending-section').innerHTML=pendHTML;
+  // Target card
+  if(currentGoal){
+    const targetAmt=Number(currentGoal.target_amount)||0;
+    document.getElementById('target-month-label').textContent=now.toLocaleString('en-SG',{month:'long'})+' target';
+    document.getElementById('target-current-of-target').innerHTML=`$${monthIncome.toFixed(2)} <span style="font-size:14px;color:var(--text3);font-weight:400">/ $${targetAmt.toFixed(2)}</span>`;
+    const tpct=targetAmt>0?Math.min(100,Math.round((monthIncome/targetAmt)*100)):0;
+    document.getElementById('target-progress-bar').style.width=tpct+'%';
+  }
+  // Savings card
+  const savingsTargetTotal=savingsGoals.reduce((s,g)=>s+Number(g.target_amount),0);
+  const savingsSavedTotal=savingsContributions.reduce((s,c)=>s+Number(c.amount),0);
+  document.getElementById('savings-total-display').innerHTML=`$${savingsSavedTotal.toFixed(2)} <span style="font-size:14px;color:var(--text3);font-weight:400">/ $${savingsTargetTotal.toFixed(2)}</span>`;
   // Income tab
-  const monthIncome=earnings.filter(e=>inMonth(e.ts||e.id)).reduce((s,e)=>s+e.amount,0);
   const by=src=>earnings.filter(e=>inMonth(e.ts||e.id)&&e.source===src).reduce((s,e)=>s+e.amount,0);
   document.getElementById('total-earned').textContent='$'+totalAll.toFixed(2);
   document.getElementById('month-earned').textContent='$'+monthIncome.toFixed(2);
