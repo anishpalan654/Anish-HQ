@@ -350,7 +350,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <div class="card" style="margin-bottom:10px">
       <div class="card-label">Monthly commitments</div>
       <div class="card-value" id="subs-total">$0</div>
-      <div class="card-sub">SGD / month</div>
+      <div class="card-sub">SGD / month · top up Maybank on the 8th</div>
     </div>
     <div class="section-label">Add subscription</div>
     <div class="earn-form">
@@ -729,16 +729,20 @@ function weekDays(){ // Monday..Sunday of the current week
 }
 
 // ── MONEY NUMBERS ──
+const PAY_DAY=8; // subscriptions get topped up into Maybank on this day each month
+function ord(n){if(!n)return '?';const v=n%100;return n+((v>=11&&v<=13)?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));}
+function subsCovered(){return new Date().getDate()>=PAY_DAY;}
+function subCycleDue(sub){
+  const n=new Date();n.setHours(0,0,0,0);
+  const start=n.getDate()>=PAY_DAY?new Date(n.getFullYear(),n.getMonth(),PAY_DAY):new Date(n.getFullYear(),n.getMonth()-1,PAY_DAY);
+  const d=sub.billingDay||1;
+  return d>=PAY_DAY?new Date(start.getFullYear(),start.getMonth(),d):new Date(start.getFullYear(),start.getMonth()+1,d);
+}
 function moneyNumbers(){
   const total=accounts.reduce((s,a)=>s+a.balance,0);
   const key=monthKeyOf(new Date());
   const dueMonth=installments.filter(i=>!i.paid&&i.due_month<=key).reduce((s,i)=>s+i.amount,0);
-  const now=new Date();
-  const subsLeft=subscriptions.filter(s=>{
-    if(!s.lastLogged)return true;
-    const l=new Date(s.lastLogged);
-    return !(l.getMonth()===now.getMonth()&&l.getFullYear()===now.getFullYear());
-  }).reduce((s,x)=>s+x.amount,0);
+  const subsLeft=subsCovered()?0:subscriptions.reduce((t,x)=>t+Number(x.amount),0);
   const owedTotal=debts.filter(d=>d.kind==='owe').reduce((s,d)=>s+Math.max(0,d.total-d.paid),0);
   return {total,dueMonth,subsLeft,owedTotal,safe:total-dueMonth-subsLeft};
 }
@@ -790,7 +794,7 @@ function renderToday(){
   const m=moneyNumbers();
   $('t-safe').textContent=(m.safe<0?'-':'')+fmt(Math.abs(m.safe));
   $('t-safe').style.color=m.safe<0?'var(--red)':'var(--text)';
-  $('t-safe-sub').textContent=`${fmt(m.total)} in the bank · ${fmt(m.dueMonth)} owed this month · ${fmt(m.subsLeft)} subs to come`;
+  $('t-safe-sub').textContent=`${fmt(m.total)} in the bank · ${fmt(m.dueMonth)} owed this month · ${m.subsLeft>0?fmt(m.subsLeft)+' subscriptions for the 8th':'subscriptions covered'}`;
 
   const dayStr=toPickerVal(viewingDate);
   const spentDay=spending.filter(s=>toPickerVal(new Date(s.ts||s.id))===dayStr).reduce((s,e)=>s+Number(e.amount),0);
@@ -858,10 +862,14 @@ function renderMoneyOverview(){
   $('ov-accts').innerHTML=accounts.map(a=>`<div class="acct-row" onclick="editBalance(${a.id})"><span>${a.name}</span><span class="acct-bal">${fmt(a.balance)} <span style="color:var(--text3);font-size:11px">✎</span></span></div>`).join('')||'<div class="empty">No accounts</div>';
   $('ov-calc').innerHTML=`<div class="calc-row"><span>In the bank</span><span>${fmt(m.total)}</span></div>
   <div class="calc-row"><span>− Owed this month</span><span>${fmt(m.dueMonth)}</span></div>
-  <div class="calc-row"><span>− Subscriptions still to pay</span><span>${fmt(m.subsLeft)}</span></div>
+  <div class="calc-row"><span>− Subscriptions for the 8th top-up</span><span>${fmt(m.subsLeft)}</span></div>
   <div class="calc-row total"><span>Safe to spend</span><span style="color:${m.safe<0?'var(--red)':'var(--green)'}">${m.safe<0?'-':''}${fmt(Math.abs(m.safe))}</span></div>
   <div class="calc-row" style="margin-top:8px"><span>Still owed in total</span><span>${fmt(m.owedTotal)}</span></div>
-  <div class="calc-row"><span>If I cleared every debt today</span><span>${m.total-m.owedTotal<0?'-':''}${fmt(Math.abs(m.total-m.owedTotal))}</span></div>`;
+    <div class="calc-row"><span>If I cleared every debt today</span><span>${m.total-m.owedTotal<0?'-':''}${fmt(Math.abs(m.total-m.owedTotal))}</span></div>`;
+}
+function markSubsPaid(){
+  try{localStorage.setItem('subs_paid_month',monthKeyOf(new Date()));}catch(e){}
+  renderMoneyOverview();renderToday();
 }
 async function editBalance(id){
   const a=accounts.find(x=>x.id===id);if(!a)return;
@@ -1224,27 +1232,24 @@ async function addSub(){
 
 async function deleteSub(id){subscriptions=subscriptions.filter(x=>x.id!==id);await dbDelete('subscriptions',id);renderEarnings();}
 
-async function logSubAsSpent(id){
+async function logSubAsSpent(id,nextMonth){
   const s=subscriptions.find(x=>x.id===id);if(!s)return;
   const now=new Date();
-  const row={id:Date.now(),ts:Date.now(),amount:s.amount,category:'Subscriptions',note:s.name,date:now.toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'})};
+  const row={id:Date.now(),ts:Date.now(),amount:s.amount,category:'Subscriptions',note:s.name+(nextMonth?' (next month)':''),date:now.toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'})};
   await dbInsert('spending',row);spending.unshift(row);
-  s.lastLogged=Date.now();s.last_logged=s.lastLogged;
+  s.lastLogged=nextMonth?new Date(now.getFullYear(),now.getMonth()+1,1,0,0,1).getTime():Date.now();s.last_logged=s.lastLogged;
   await dbUpdate('subscriptions',id,{last_logged:s.lastLogged});
-  checkSubsDue();renderEarnings();
+  checkSubsDue();renderEarnings();renderToday();
 }
 
 function checkSubsDue(){
-  const now=new Date();const today=now.getDate();const curM=now.getMonth();const curY=now.getFullYear();
-  const due=subscriptions.filter(s=>{
-    if(!s.billingDay)return false;
-    if(today<s.billingDay)return false;
-    if(!s.lastLogged)return true;
-    const last=new Date(s.lastLogged);
-    return!(last.getMonth()===curM&&last.getFullYear()===curY);
-  });
   const wrap=document.getElementById('subs-due-banner');if(!wrap)return;
-  wrap.innerHTML=due.map(s=>`<div class="notify-banner"><span class="nb-text"><strong>${s.name}</strong> ($${s.amount.toFixed(2)}) due on the ${s.billingDay}th — log as spent?</span><button onclick="logSubAsSpent(${s.id})">Log it</button></div>`).join('');
+  const total=subscriptions.reduce((t,x)=>t+Number(x.amount),0);
+  const day=new Date().getDate();
+  if(!total){wrap.innerHTML='';return;}
+  if(day<PAY_DAY)wrap.innerHTML=`<div class="notify-banner"><span class="nb-text">Payday top-up: put <strong>${fmt(total)}</strong> into Maybank on the ${ord(PAY_DAY)} (${PAY_DAY-day} day${PAY_DAY-day===1?'':'s'} to go)</span></div>`;
+  else if(day===PAY_DAY)wrap.innerHTML=`<div class="notify-banner"><span class="nb-text">Today: top up Maybank with <strong>${fmt(total)}</strong> for this month's subscriptions</span></div>`;
+  else wrap.innerHTML='';
 }
 
 function renderEarnings(){
@@ -1302,7 +1307,7 @@ function renderEarnings(){
   // Subs
   const subsTotal=subscriptions.reduce((s,x)=>s+x.amount,0);
   document.getElementById('subs-total').textContent='$'+subsTotal.toFixed(2);
-  document.getElementById('subs-list').innerHTML=subscriptions.length?subscriptions.map(s=>`<div class="earn-entry"><div class="earn-source"><div class="earn-name">${s.name}</div>${s.billingDay?`<div class="earn-note-text">Renews on the ${s.billingDay}th</div>`:''}</div><div class="earn-amt" style="color:var(--orange)">$${s.amount.toFixed(2)}/mo</div><button class="del-btn" onclick="deleteSub(${s.id})">×</button></div>`).join(''):'<div class="empty">No subscriptions yet</div>';
+  document.getElementById('subs-list').innerHTML=subscriptions.length?subscriptions.slice().sort((x,y)=>subCycleDue(x)-subCycleDue(y)).map(s=>{const due=subCycleDue(s);const today=new Date();today.setHours(0,0,0,0);const days=Math.round((due-today)/86400000);const ds=due.toLocaleDateString('en-SG',{day:'numeric',month:'short'});const status=days<=0?`<span style="font-size:11px;color:var(--green)">✓ ${ds} · should have gone through (Maybank)</span>`:`<span style="font-size:11px;color:var(--text2)">due ${ds} · in ${days} day${days===1?'':'s'} · covered by your top-up</span>`;return `<div class="earn-entry" style="flex-wrap:wrap"><div class="earn-source"><div class="earn-name">${s.name}</div><div class="earn-note-text">Billed on the ${ord(s.billingDay)} each month</div></div><div class="earn-amt" style="color:var(--orange)">$${s.amount.toFixed(2)}/mo</div><button class="del-btn" onclick="deleteSub(${s.id})">×</button><div style="width:100%;margin-top:4px">${status}</div></div>`;}).join(''):'<div class="empty">No subscriptions yet</div>';
   // CPF
   const cpfEntries=earnings.filter(e=>e.cpfAmount);
   document.getElementById('cpf-total').textContent='$'+cpfEntries.reduce((s,e)=>s+e.cpfAmount,0).toFixed(2);
