@@ -358,6 +358,8 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <button class="add-btn" style="width:100%;margin:8px 0 14px" onclick="addSpend()">Log spending</button>
     <div class="section-label">History</div>
     <div id="spend-log"><div class="empty">No spending logged yet</div></div>
+    <div class="section-label" style="margin-top:18px">Transfers &amp; card payments</div>
+    <div id="stmt-transfers"></div>
   </div>
 
   <div id="mtab-subs" style="display:none">
@@ -579,7 +581,7 @@ async function dbDelete(table, id) {
 
 // ── STATE ──
 let items=[], earnings=[], spending=[], subscriptions=[];
-let accounts=[], debts=[], installments=[], habitLog=[], assignments=[], loans=[];
+let accounts=[], debts=[], installments=[], habitLog=[], assignments=[], loans=[], transfers=[];
 let incomeGoals=[], savingsGoals=[], savingsContributions=[], currentGoal=null;
 let currentType='task', currentMoneyTab='overview', viewingDate=new Date(), editingId=null;
 let notifGranted = localStorage.getItem('anish_notif')==='granted';
@@ -587,10 +589,10 @@ let notifGranted = localStorage.getItem('anish_notif')==='granted';
 // ── LOAD ──
 async function loadAll() {
   const [supaResults] = await Promise.all([
-    Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions'), dbGet('income_goals'), dbGet('savings_goals'), dbGet('savings_contributions'), dbGet('accounts'), dbGet('debts'), dbGet('debt_installments'), dbGet('habit_log'), dbGet('assignments'), dbGet('loans')]),
+    Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions'), dbGet('income_goals'), dbGet('savings_goals'), dbGet('savings_contributions'), dbGet('accounts'), dbGet('debts'), dbGet('debt_installments'), dbGet('habit_log'), dbGet('assignments'), dbGet('loans'), dbGet('transfers')]),
     loadTodoistTasks()
   ]);
-  [items, earnings, spending, subscriptions, incomeGoals, savingsGoals, savingsContributions, accounts, debts, installments, habitLog, assignments, loans] = supaResults;
+  [items, earnings, spending, subscriptions, incomeGoals, savingsGoals, savingsContributions, accounts, debts, installments, habitLog, assignments, loans, transfers] = supaResults;
   loans=loans.map(l=>({...l,drawn:Number(l.drawn),monthly:Number(l.monthly)}));
   const order=['DBS','Trust','GXS'];
   accounts=accounts.map(a=>({...a,balance:Number(a.balance)})).sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
@@ -1021,6 +1023,8 @@ function renderSpendTab(){
     return `<div style="margin-bottom:10px"><div style="cursor:pointer" onclick="toggleCat('${cat}')"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--text2)">${open?'▾':'▸'} ${cat} <span style="color:var(--text3)">(${list.length})</span></span><span style="font-weight:500">$${amt.toFixed(2)} <span style="color:var(--text3);font-weight:400">${pct}%</span></span></div><div style="height:4px;background:var(--bg3);border-radius:2px"><div style="height:4px;width:${pct}%;background:var(--accent);border-radius:2px"></div></div></div>${open?`<div style="margin-top:6px;padding-left:10px;border-left:2px solid var(--border)">${list.map(spendRowHTML).join('')}</div>`:''}</div>`;
   }).join(''):'<div class="empty">No spending this month</div>';
   $('spend-log').innerHTML=rows.length?rows.map(spendRowHTML).join(''):'<div class="empty">Nothing logged this month</div>';
+  const tr=transfers.filter(t=>monthKeyOf(t.ts||t.id)===key&&(!stmtAcct||t.account===stmtAcct)).sort((a,b)=>(b.ts||b.id)-(a.ts||a.id));
+  $('stmt-transfers').innerHTML=tr.length?tr.map(t=>{const d=new Date(t.ts||t.id).toLocaleDateString('en-SG',{day:'numeric',month:'short'});const out=t.kind==='out';return `<div class="earn-entry"><div class="earn-source"><div class="earn-name">${t.note||'Transfer'}</div><div class="earn-note-text">${t.account} · ${out?'money moved out (not spending)':'money in'}</div></div><div class="earn-amt" style="color:${out?'var(--orange)':'var(--green)'}">${out?'-':'+'}$${Number(t.amount).toFixed(2)}</div><div class="earn-date">${d}</div></div>`;}).join(''):'<div class="empty">No transfers logged this month yet. Future AXS payments, own-account transfers and top-ups will show here.</div>';
 }
 function openSpendEdit(id){
   const x=spending.find(y=>y.id===id);if(!x)return;
@@ -1063,7 +1067,7 @@ function renderOwe(){
     return `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:15px;font-weight:500">${d.name}</div>${d.note?`<div class="earn-note-text">${d.note}</div>`:''}</div><div style="text-align:right"><div class="card-value" style="font-size:20px;color:${left>0?'var(--red)':'var(--green)'}">${left>0?fmt(left):'Cleared'}</div><div class="earn-note-text">of ${fmt(d.total)}</div></div></div>
     <div class="pbar"><div style="width:${pct}%;background:var(--green)"></div></div>
     ${(()=>{if(left<=0)return '';const di=debtDueInfo(d,nextDue);const plan=d.plan_amount?`<span style="color:var(--text3)"> · ${fmt(d.plan_amount)}/month</span>`:'';return di?`<div style="font-size:12px;margin-top:8px;color:${di.c}">${di.t}${plan}</div>`:'';})()}
-    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${left>0?`${nextDue?`<button class="mini-btn" onclick="payInstallment(${nextDue.id})">Paid ${fmt(nextDue.amount)} (${nextDue.due_month})</button>`:''}<button class="mini-btn ghost" onclick="payDebtCustom(${d.id})">Paid other amount</button>`:''}<button class="mini-btn ghost" onclick="deleteDebt(${d.id})">Remove</button></div></div>`;
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${left>0?`${nextDue?`<button class="mini-btn" onclick="payInstallment(${nextDue.id})">Paid ${fmt(nextDue.amount)} (${nextDue.due_month})</button>`:''}<button class="mini-btn${nextDue?' ghost':''}" onclick="payDebtFull(${d.id})">Paid in full (${fmt(left)})</button><button class="mini-btn ghost" onclick="payDebtCustom(${d.id})">Paid other amount</button>`:''}<button class="mini-btn ghost" onclick="deleteDebt(${d.id})">Remove</button></div></div>`;
   }).join(''):'<div class="empty">Nothing owed 🎉</div>';
   renderSavingsGoalsList();
 }
@@ -1075,6 +1079,16 @@ async function payInstallment(id){
   renderOwe();renderMoneyOverview();renderToday();
   await dbUpdate('debt_installments',id,{paid:true});
   if(d)await dbUpdate('debts',d.id,{paid:d.paid});
+}
+async function payDebtFull(id){
+  const d=debts.find(x=>x.id===id);if(!d)return;
+  if(!confirm('Mark '+d.name+' as fully paid?'))return;
+  d.paid=d.total;
+  const open=installments.filter(i=>i.debt_id===id&&!i.paid);
+  open.forEach(i=>{i.paid=true;});
+  renderOwe();renderMoneyOverview();renderToday();
+  await dbUpdate('debts',id,{paid:d.total});
+  for(const i of open)await dbUpdate('debt_installments',i.id,{paid:true});
 }
 async function payDebtCustom(id){
   const d=debts.find(x=>x.id===id);if(!d)return;
