@@ -164,6 +164,8 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <div id="ql-cat-row" style="display:none;margin-bottom:10px">
       <select id="ql-cat" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none">
         <option value="Food">Food</option>
+        <option value="Groceries">Groceries</option>
+        <option value="Drinks">Drinks</option>
         <option value="Transport">Transport</option>
         <option value="Shopping">Shopping</option>
         <option value="Entertainment">Entertainment</option>
@@ -265,6 +267,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
       <div class="card-label">What's actually yours</div>
       <div id="ov-calc"></div>
     </div>
+    <div class="card" id="ov-need"></div>
     <div class="card"><div class="card-label">Pending pay</div><div class="card-value" id="overview-pending" style="color:var(--orange)">$0</div><div class="card-sub">not paid yet</div></div>
     <div id="overview-pending-section"></div>
   </div>
@@ -318,17 +321,28 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   </div>
 
   <div id="mtab-spend" style="display:none">
-    <div class="grid2">
-      <div class="card"><div class="card-label">This month spent</div><div class="card-value" id="month-spend">$0</div></div>
-      <div class="card"><div class="card-label">Net this month</div><div class="card-value" id="month-net">$0</div></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <button onclick="changeStmtMonth(-1)" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 14px;color:var(--text);font-size:16px;cursor:pointer">‹</button>
+      <div id="stmt-month-label" style="flex:1;text-align:center;font-size:15px;font-weight:500">Month</div>
+      <button onclick="changeStmtMonth(1)" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 14px;color:var(--text);font-size:16px;cursor:pointer">›</button>
     </div>
-    <div class="section-label">By category</div>
+    <div class="chips" id="stmt-chips">
+      <div class="chip active" data-a="" onclick="setStmtAcct('')">All</div>
+      <div class="chip" data-a="DBS" onclick="setStmtAcct('DBS')">DBS</div>
+      <div class="chip" data-a="Trust" onclick="setStmtAcct('Trust')">Trust</div>
+      <div class="chip" data-a="GXS" onclick="setStmtAcct('GXS')">GXS</div>
+    </div>
+    <div class="grid2" id="stmt-grid"></div>
+    <div id="stmt-note" style="font-size:11px;color:var(--text3);margin:8px 0"></div>
+    <div class="section-label">By category · tap to see what you bought</div>
     <div id="spend-by-cat"></div>
     <div class="section-label" style="margin-top:16px">Log spending</div>
     <div class="earn-form">
       <input type="number" id="spend-amount" placeholder="SGD amount" step="0.01" min="0">
       <select id="spend-cat">
         <option value="Food">Food</option>
+        <option value="Groceries">Groceries</option>
+        <option value="Drinks">Drinks</option>
         <option value="Transport">Transport</option>
         <option value="Shopping">Shopping</option>
         <option value="Entertainment">Entertainment</option>
@@ -367,6 +381,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   </div>
 
   <div id="mtab-owe" style="display:none">
+    <div class="card" id="loan-card" style="border:1px solid #1a2a3a"></div>
     <div class="card" style="border:1px solid #3a1a1a">
       <div class="card-label">I owe</div>
       <div class="big-money" id="ow-total" style="color:var(--red)">$0</div>
@@ -375,6 +390,13 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <div id="ow-list"></div>
     <div class="section-label">Add a debt</div>
     <div class="earn-form"><input type="text" id="debt-name" placeholder="Who / what"><input type="number" id="debt-amt" placeholder="$" step="0.01" min="0" style="max-width:100px"></div>
+    <select id="debt-mode" class="inp" style="margin-bottom:8px" onchange="debtModeChanged()">
+      <option value="none">No due date</option>
+      <option value="date">Pay all by one date</option>
+      <option value="monthly">Pay monthly until cleared</option>
+    </select>
+    <div id="debt-date-row" style="display:none;margin-bottom:8px"><input type="date" id="debt-date" class="inp"></div>
+    <div id="debt-plan-row" style="display:none;gap:8px;margin-bottom:8px"><input type="number" id="debt-plan-amt" class="inp" placeholder="$ per month" step="0.01" min="0" style="flex:1"><input type="number" id="debt-plan-day" class="inp" placeholder="Day of month (1-31)" min="1" max="31" style="flex:1"></div>
     <button class="add-btn" style="width:100%;margin-bottom:6px" onclick="addDebt()">Add debt</button>
 
     <div class="section-label" style="margin-top:24px">Savings</div>
@@ -406,6 +428,21 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <div style="display:flex;gap:8px">
       <button onclick="saveEditModal()" style="flex:1;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
       <button onclick="deleteEditModal()" style="flex:1;background:var(--bg3);color:var(--red);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- SPEND EDIT MODAL -->
+<div id="spend-edit-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;padding:20px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:420px;margin:90px auto 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:16px;font-weight:500">Edit purchase</span><button onclick="closeSpendEdit()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button></div>
+    <div id="se-info" style="font-size:13px;color:var(--text2);margin-bottom:14px"></div>
+    <div class="card-label">Category (this purchase only)</div>
+    <select id="se-cat" class="inp" style="margin-bottom:12px"></select>
+    <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:14px"><input type="checkbox" id="se-debt" style="width:18px;height:18px"> This was a debt payment (leave out of spending)</label>
+    <div style="display:flex;gap:8px">
+      <button onclick="saveSpendEdit()" style="flex:1;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
+      <button onclick="deleteSpendEdit()" style="flex:1;background:var(--bg3);color:var(--red);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Delete</button>
     </div>
   </div>
 </div>
@@ -542,7 +579,7 @@ async function dbDelete(table, id) {
 
 // ── STATE ──
 let items=[], earnings=[], spending=[], subscriptions=[];
-let accounts=[], debts=[], installments=[], habitLog=[], assignments=[];
+let accounts=[], debts=[], installments=[], habitLog=[], assignments=[], loans=[];
 let incomeGoals=[], savingsGoals=[], savingsContributions=[], currentGoal=null;
 let currentType='task', currentMoneyTab='overview', viewingDate=new Date(), editingId=null;
 let notifGranted = localStorage.getItem('anish_notif')==='granted';
@@ -550,10 +587,11 @@ let notifGranted = localStorage.getItem('anish_notif')==='granted';
 // ── LOAD ──
 async function loadAll() {
   const [supaResults] = await Promise.all([
-    Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions'), dbGet('income_goals'), dbGet('savings_goals'), dbGet('savings_contributions'), dbGet('accounts'), dbGet('debts'), dbGet('debt_installments'), dbGet('habit_log'), dbGet('assignments')]),
+    Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions'), dbGet('income_goals'), dbGet('savings_goals'), dbGet('savings_contributions'), dbGet('accounts'), dbGet('debts'), dbGet('debt_installments'), dbGet('habit_log'), dbGet('assignments'), dbGet('loans')]),
     loadTodoistTasks()
   ]);
-  [items, earnings, spending, subscriptions, incomeGoals, savingsGoals, savingsContributions, accounts, debts, installments, habitLog, assignments] = supaResults;
+  [items, earnings, spending, subscriptions, incomeGoals, savingsGoals, savingsContributions, accounts, debts, installments, habitLog, assignments, loans] = supaResults;
+  loans=loans.map(l=>({...l,drawn:Number(l.drawn),monthly:Number(l.monthly)}));
   const order=['DBS','Trust','GXS'];
   accounts=accounts.map(a=>({...a,balance:Number(a.balance)})).sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   debts=debts.map(d=>({...d,total:Number(d.total),paid:Number(d.paid||0)}));
@@ -738,13 +776,38 @@ function subCycleDue(sub){
   const d=sub.billingDay||1;
   return d>=PAY_DAY?new Date(start.getFullYear(),start.getMonth(),d):new Date(start.getFullYear(),start.getMonth()+1,d);
 }
+function loanWindow(l){ // true from the 25th until the 1st when a payment is coming
+  const n=new Date();const nextFirst=new Date(n.getFullYear(),n.getMonth()+1,1);
+  const fd=l.first_due?new Date(l.first_due+'T00:00:00'):null;
+  return !!fd&&nextFirst>=fd&&n.getDate()>=25;
+}
+function loanNextDue(l){
+  const n=new Date();n.setHours(0,0,0,0);
+  const fd=l.first_due?new Date(l.first_due+'T00:00:00'):new Date(n.getFullYear(),n.getMonth()+1,1);
+  let d=new Date(n.getFullYear(),n.getMonth(),1);if(d<n)d=new Date(n.getFullYear(),n.getMonth()+1,1);
+  return d<fd?fd:d;
+}
+function usualSpend(){try{const v=parseFloat(localStorage.getItem('usual_spend'));return isNaN(v)?460:v;}catch(e){return 460;}}
+function editUsualSpend(){const v=parseFloat(prompt('Usual monthly spending ($)?',usualSpend()));if(isNaN(v))return;try{localStorage.setItem('usual_spend',v);}catch(e){}renderMoneyOverview();renderNeed();}
+function needNumbers(){
+  const key=monthKeyOf(new Date());const now=new Date();
+  const subs=subscriptions.reduce((t,x)=>t+Number(x.amount),0);
+  let debt=installments.filter(i=>i.due_month===key||(i.due_month<key&&!i.paid)).reduce((t,i)=>t+i.amount,0);
+  debts.filter(d=>d.kind==='owe'&&d.due_date&&d.due_date.slice(0,7)===key&&!installments.some(i=>i.debt_id===d.id)).forEach(d=>{debt+=Math.max(0,d.total-d.paid);});
+  const nextFirst=new Date(now.getFullYear(),now.getMonth()+1,1);
+  const loan=loans.filter(l=>l.first_due&&nextFirst>=new Date(l.first_due+'T00:00:00')).reduce((t,l)=>t+l.monthly,0);
+  const spend=usualSpend();
+  const earned=earnings.filter(e=>monthKeyOf(e.ts||e.id)===key).reduce((t,e)=>t+Number(e.amount),0);
+  return {subs,debt,loan,spend,total:subs+debt+loan+spend,earned};
+}
 function moneyNumbers(){
   const total=accounts.reduce((s,a)=>s+a.balance,0);
   const key=monthKeyOf(new Date());
   const dueMonth=installments.filter(i=>!i.paid&&i.due_month<=key).reduce((s,i)=>s+i.amount,0);
   const subsLeft=subsCovered()?0:subscriptions.reduce((t,x)=>t+Number(x.amount),0);
+  const loanLeft=loans.filter(loanWindow).reduce((t,l)=>t+l.monthly,0);
   const owedTotal=debts.filter(d=>d.kind==='owe').reduce((s,d)=>s+Math.max(0,d.total-d.paid),0);
-  return {total,dueMonth,subsLeft,owedTotal,safe:total-dueMonth-subsLeft};
+  return {total,dueMonth,subsLeft,owedTotal,safe:total-dueMonth-subsLeft-loanLeft,loanLeft};
 }
 
 // ── HABITS ──
@@ -794,10 +857,10 @@ function renderToday(){
   const m=moneyNumbers();
   $('t-safe').textContent=(m.safe<0?'-':'')+fmt(Math.abs(m.safe));
   $('t-safe').style.color=m.safe<0?'var(--red)':'var(--text)';
-  $('t-safe-sub').textContent=`${fmt(m.total)} in the bank · ${fmt(m.dueMonth)} owed this month · ${m.subsLeft>0?fmt(m.subsLeft)+' subscriptions for the 8th':'subscriptions covered'}`;
+  $('t-safe-sub').textContent=`${fmt(m.total)} in the bank · ${fmt(m.dueMonth)} owed this month · ${m.subsLeft>0?fmt(m.subsLeft)+' subscriptions for the 8th':'subscriptions covered'}${m.loanLeft>0?' · '+fmt(m.loanLeft)+' loan to OCBC':''}`;
 
   const dayStr=toPickerVal(viewingDate);
-  const spentDay=spending.filter(s=>toPickerVal(new Date(s.ts||s.id))===dayStr).reduce((s,e)=>s+Number(e.amount),0);
+  const spentDay=spending.filter(s=>!s.debt_payment&&toPickerVal(new Date(s.ts||s.id))===dayStr).reduce((s,e)=>s+Number(e.amount),0);
   $('t-spent').textContent=fmt(spentDay);
 
   $('t-habits').innerHTML=HABITS.map(hb=>{
@@ -863,6 +926,7 @@ function renderMoneyOverview(){
   $('ov-calc').innerHTML=`<div class="calc-row"><span>In the bank</span><span>${fmt(m.total)}</span></div>
   <div class="calc-row"><span>− Owed this month</span><span>${fmt(m.dueMonth)}</span></div>
   <div class="calc-row"><span>− Subscriptions for the 8th top-up</span><span>${fmt(m.subsLeft)}</span></div>
+  ${m.loanLeft>0?`<div class="calc-row"><span>− OCBC loan (move before the 1st)</span><span>${fmt(m.loanLeft)}</span></div>`:''}
   <div class="calc-row total"><span>Safe to spend</span><span style="color:${m.safe<0?'var(--red)':'var(--green)'}">${m.safe<0?'-':''}${fmt(Math.abs(m.safe))}</span></div>
   <div class="calc-row" style="margin-top:8px"><span>Still owed in total</span><span>${fmt(m.owedTotal)}</span></div>
     <div class="calc-row"><span>If I cleared every debt today</span><span>${m.total-m.owedTotal<0?'-':''}${fmt(Math.abs(m.total-m.owedTotal))}</span></div>`;
@@ -870,6 +934,48 @@ function renderMoneyOverview(){
 function markSubsPaid(){
   try{localStorage.setItem('subs_paid_month',monthKeyOf(new Date()));}catch(e){}
   renderMoneyOverview();renderToday();
+}
+function renderNeed(){
+  const n=needNumbers();
+  const pct=n.total>0?Math.min(100,Math.round(n.earned/n.total*100)):0;
+  const left=n.total-n.earned;
+  $('ov-need').innerHTML=`<div class="card-label">Earn this month</div>
+  <div class="card-value" style="font-size:24px">${fmt(n.earned)} <span style="font-size:14px;color:var(--text3);font-weight:400">/ ${fmt(n.total)} needed</span></div>
+  <div class="pbar"><div style="width:${pct}%;background:${left<=0?'var(--green)':'var(--accent)'}"></div></div>
+  <div style="font-size:13px;margin:8px 0;color:${left<=0?'var(--green)':'var(--text2)'}">${left<=0?'Target hit ✓':fmt(left)+' still to earn'}</div>
+  <div class="calc-row"><span>Subscriptions</span><span>${fmt(n.subs)}</span></div>
+  <div class="calc-row"><span>Debt payments due</span><span>${fmt(n.debt)}</span></div>
+  ${n.loan>0?`<div class="calc-row"><span>OCBC loan payment</span><span>${fmt(n.loan)}</span></div>`:''}
+  <div class="calc-row" style="cursor:pointer" onclick="editUsualSpend()"><span>Usual spending <span style="color:var(--text3);font-size:11px">✎</span></span><span>${fmt(n.spend)}</span></div>
+  <div class="card-sub" style="margin-top:6px">Counts income logged this month (Wingstop after CPF).</div>`;
+}
+function renderLoan(){
+  const el=$('loan-card');if(!el)return;
+  if(!loans.length){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML=loans.map(l=>{
+    const nd=loanNextDue(l);const today=new Date();today.setHours(0,0,0,0);
+    const days=Math.round((nd-today)/86400000);
+    const ds=nd.toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+    return `<div class="card-label">${l.name}</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline"><div class="card-value" style="font-size:22px">${fmt(l.monthly)}<span style="font-size:12px;color:var(--text3);font-weight:400"> /month${l.monthly_is_estimate?' (estimate)':''}</span></div></div>
+    <div class="calc-row" style="margin-top:6px"><span>Drawn so far</span><span>${fmt(l.drawn)}</span></div>
+    <div class="calc-row"><span>Next deduction (OCBC account)</span><span>${ds} · ${days} day${days===1?'':'s'}</span></div>
+    ${l.rate?`<div class="calc-row"><span>Rate / term</span><span>${l.rate}% · ${l.months} months</span></div>`:''}
+    <div style="display:flex;gap:6px;margin-top:10px"><button class="mini-btn ghost" onclick="editLoan(${l.id},'drawn')">Update drawn amount</button><button class="mini-btn ghost" onclick="editLoan(${l.id},'monthly')">Set real monthly</button></div>`;
+  }).join('');
+}
+async function editLoan(id,field){
+  const l=loans.find(x=>x.id===id);if(!l)return;
+  const v=parseFloat(prompt(field==='drawn'?'Total drawn down so far ($)?':'Monthly instalment OCBC confirmed ($)?',l[field]));
+  if(isNaN(v)||v<0)return;
+  l[field]=v;const patch={[field]:v};
+  if(field==='monthly'){l.monthly_is_estimate=false;patch.monthly_is_estimate=false;}
+  else if(l.monthly_is_estimate&&l.rate&&l.months){ // re-estimate from new drawn amount
+    const r=l.rate/1200;l.monthly=Math.round(v*r/(1-Math.pow(1+r,-l.months))*100)/100;patch.monthly=l.monthly;
+  }
+  renderLoan();renderMoneyOverview();renderToday();
+  await dbUpdate('loans',id,patch);
 }
 async function editBalance(id){
   const a=accounts.find(x=>x.id===id);if(!a)return;
@@ -879,6 +985,67 @@ async function editBalance(id){
   a.balance=n;
   await dbUpdate('accounts',id,{balance:n,updated:Date.now()});
   renderMoneyOverview();renderToday();
+}
+
+// ── SPENDING STATEMENT ──
+const CATS=['Food','Groceries','Drinks','Transport','Shopping','Entertainment','Health','Subscriptions','Other'];
+let stmtMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1),stmtAcct='',openCat=null,editingSpendId=null;
+function changeStmtMonth(d){stmtMonth=new Date(stmtMonth.getFullYear(),stmtMonth.getMonth()+d,1);openCat=null;renderSpendTab();}
+function setStmtAcct(a){stmtAcct=a;openCat=null;renderSpendTab();}
+function toggleCat(c){openCat=openCat===c?null:c;renderSpendTab();}
+function spendRowHTML(x){
+  const d=new Date(x.ts||x.id);
+  const ds=d.toLocaleDateString('en-SG',{day:'numeric',month:'short'});
+  return `<div class="earn-entry" style="cursor:pointer" onclick="openSpendEdit(${x.id})"><div class="earn-source"><div class="earn-name">${(x.note||x.category||'').replace(/^auto: /,'')}</div><div class="earn-note-text">${x.category}${x.account?' · '+x.account:''}${x.debt_payment?' · debt payment':''}</div></div><div class="earn-amt" style="color:var(--red)">-$${Number(x.amount).toFixed(2)}</div><div class="earn-date">${ds}</div></div>`;
+}
+function renderSpendTab(){
+  if(!$('stmt-month-label'))return;
+  const key=monthKeyOf(stmtMonth);
+  $('stmt-month-label').textContent=stmtMonth.toLocaleDateString('en-SG',{month:'long',year:'numeric'});
+  document.querySelectorAll('#stmt-chips .chip').forEach(c=>{c.className='chip'+(c.dataset.a===stmtAcct?' active':'');});
+  const rows=spending.filter(x=>monthKeyOf(x.ts||x.id)===key&&(!stmtAcct||x.account===stmtAcct)).sort((a,b)=>(b.ts||b.id)-(a.ts||a.id));
+  const spendRows=rows.filter(x=>!x.debt_payment);
+  const debtRows=rows.filter(x=>x.debt_payment);
+  const out=spendRows.reduce((t,x)=>t+Number(x.amount),0);
+  const debtPaid=debtRows.reduce((t,x)=>t+Number(x.amount),0);
+  const inc=earnings.filter(e=>monthKeyOf(e.ts||e.id)===key).reduce((t,e)=>t+Number(e.amount),0);
+  let g=`<div class="card"><div class="card-label">Spent</div><div class="card-value" style="color:var(--red)">${fmt(out)}</div></div>`;
+  g+=`<div class="card"><div class="card-label">Debt payments</div><div class="card-value" style="color:var(--orange)">${fmt(debtPaid)}</div></div>`;
+  if(!stmtAcct){g+=`<div class="card"><div class="card-label">Money in</div><div class="card-value" style="color:var(--green)">${fmt(inc)}</div></div><div class="card"><div class="card-label">Net</div><div class="card-value" style="color:${inc-out-debtPaid>=0?'var(--green)':'var(--red)'}">${inc-out-debtPaid<0?'-':''}${fmt(Math.abs(inc-out-debtPaid))}</div></div>`;}
+  $('stmt-grid').innerHTML=g;
+  $('stmt-note').textContent=stmtAcct?`Showing only purchases logged against ${stmtAcct}. Cash and older purchases have no account, so they only show under All.`:'Debt payments are kept out of "Spent".';
+  const cats=CATS.concat([...new Set(spendRows.map(x=>x.category).filter(c=>c&&!CATS.includes(c)))]);
+  $('spend-by-cat').innerHTML=spendRows.length?cats.map(cat=>{
+    const list=spendRows.filter(x=>x.category===cat);const amt=list.reduce((t,x)=>t+Number(x.amount),0);if(!amt)return '';
+    const pct=Math.round(amt/out*100);const open=openCat===cat;
+    return `<div style="margin-bottom:10px"><div style="cursor:pointer" onclick="toggleCat('${cat}')"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--text2)">${open?'▾':'▸'} ${cat} <span style="color:var(--text3)">(${list.length})</span></span><span style="font-weight:500">$${amt.toFixed(2)} <span style="color:var(--text3);font-weight:400">${pct}%</span></span></div><div style="height:4px;background:var(--bg3);border-radius:2px"><div style="height:4px;width:${pct}%;background:var(--accent);border-radius:2px"></div></div></div>${open?`<div style="margin-top:6px;padding-left:10px;border-left:2px solid var(--border)">${list.map(spendRowHTML).join('')}</div>`:''}</div>`;
+  }).join(''):'<div class="empty">No spending this month</div>';
+  $('spend-log').innerHTML=rows.length?rows.map(spendRowHTML).join(''):'<div class="empty">Nothing logged this month</div>';
+}
+function openSpendEdit(id){
+  const x=spending.find(y=>y.id===id);if(!x)return;
+  editingSpendId=id;
+  $('se-info').textContent=`${(x.note||'').replace(/^auto: /,'')} · $${Number(x.amount).toFixed(2)} · ${x.date||''}`;
+  const cats=CATS.includes(x.category)?CATS:CATS.concat([x.category]);
+  $('se-cat').innerHTML=cats.map(c=>`<option${c===x.category?' selected':''}>${c}</option>`).join('');
+  $('se-debt').checked=!!x.debt_payment;
+  $('spend-edit-modal').style.display='block';
+}
+function closeSpendEdit(){$('spend-edit-modal').style.display='none';editingSpendId=null;}
+async function saveSpendEdit(){
+  const x=spending.find(y=>y.id===editingSpendId);if(!x)return;
+  x.category=$('se-cat').value;x.debt_payment=$('se-debt').checked;
+  const id=x.id;closeSpendEdit();renderEarnings();renderToday();
+  await dbUpdate('spending',id,{category:x.category,debt_payment:x.debt_payment});
+}
+async function deleteSpendEdit(){
+  const id=editingSpendId;if(!id)return;
+  if(!confirm('Delete this purchase? If it had an account, that balance is put back.'))return;
+  const x=spending.find(y=>y.id===id);
+  if(x&&x.account){const a=accounts.find(z=>z.name===x.account);if(a)a.balance+=Number(x.amount);}
+  closeSpendEdit();
+  spending=spending.filter(y=>y.id!==id);renderEarnings();renderToday();
+  await dbDelete('spending',id);
 }
 
 // ── OWE & SAVE ──
@@ -895,6 +1062,7 @@ function renderOwe(){
     const nextDue=inst.find(i=>i.due_month<=key)||inst[0];
     return `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:15px;font-weight:500">${d.name}</div>${d.note?`<div class="earn-note-text">${d.note}</div>`:''}</div><div style="text-align:right"><div class="card-value" style="font-size:20px;color:${left>0?'var(--red)':'var(--green)'}">${left>0?fmt(left):'Cleared'}</div><div class="earn-note-text">of ${fmt(d.total)}</div></div></div>
     <div class="pbar"><div style="width:${pct}%;background:var(--green)"></div></div>
+    ${(()=>{if(left<=0)return '';const di=debtDueInfo(d,nextDue);const plan=d.plan_amount?`<span style="color:var(--text3)"> · ${fmt(d.plan_amount)}/month</span>`:'';return di?`<div style="font-size:12px;margin-top:8px;color:${di.c}">${di.t}${plan}</div>`:'';})()}
     <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${left>0?`${nextDue?`<button class="mini-btn" onclick="payInstallment(${nextDue.id})">Paid ${fmt(nextDue.amount)} (${nextDue.due_month})</button>`:''}<button class="mini-btn ghost" onclick="payDebtCustom(${d.id})">Paid other amount</button>`:''}<button class="mini-btn ghost" onclick="deleteDebt(${d.id})">Remove</button></div></div>`;
   }).join(''):'<div class="empty">Nothing owed 🎉</div>';
   renderSavingsGoalsList();
@@ -916,14 +1084,54 @@ async function payDebtCustom(id){
   renderOwe();renderMoneyOverview();renderToday();
   await dbUpdate('debts',id,{paid:d.paid});
 }
+function debtModeChanged(){
+  const m=$('debt-mode').value;
+  $('debt-date-row').style.display=m==='date'?'block':'none';
+  $('debt-plan-row').style.display=m==='monthly'?'flex':'none';
+}
 async function addDebt(){
   const name=$('debt-name').value.trim();const amt=parseFloat($('debt-amt').value);
   if(!name||!amt||amt<=0)return;
-  const res=await dbInsert('debts',{name,kind:'owe',total:amt,paid:0});
-  const row=res&&res[0]?res[0]:{id:Date.now(),name,kind:'owe',total:amt,paid:0};
+  const mode=$('debt-mode').value;
+  const body={name,kind:'owe',total:amt,paid:0};
+  let plan=null;
+  if(mode==='date'&&$('debt-date').value)body.due_date=$('debt-date').value;
+  if(mode==='monthly'){
+    const pa=parseFloat($('debt-plan-amt').value),pd=parseInt($('debt-plan-day').value);
+    if(!pa||pa<=0||!pd||pd<1||pd>31){alert('Enter the monthly amount and the day of the month');return;}
+    body.plan_amount=pa;body.plan_day=pd;plan={pa,pd};
+  }
+  const res=await dbInsert('debts',body);
+  if(!res||!res[0]){alert('Could not save — try again');return;}
+  const row=res[0];
   debts.push({...row,total:Number(row.total),paid:Number(row.paid||0)});
-  $('debt-name').value='';$('debt-amt').value='';
+  if(plan){
+    const now=new Date();let y=now.getFullYear(),m=now.getMonth();
+    if(plan.pd<now.getDate())m++;
+    let left=amt;const rows=[];
+    while(left>0.001&&rows.length<120){
+      const d=new Date(y,m+rows.length,1);
+      const a2=Math.min(plan.pa,left);left=Math.round((left-a2)*100)/100;
+      rows.push({debt_id:row.id,due_month:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),amount:a2,paid:false});
+    }
+    const ins=await dbInsert('debt_installments',rows);
+    (ins||[]).forEach(i=>installments.push({...i,amount:Number(i.amount)}));
+  }
+  $('debt-name').value='';$('debt-amt').value='';$('debt-date').value='';$('debt-plan-amt').value='';$('debt-plan-day').value='';$('debt-mode').value='none';debtModeChanged();
   renderOwe();renderMoneyOverview();renderToday();
+}
+function debtDueInfo(d,nextDue){
+  const today=new Date();today.setHours(0,0,0,0);
+  let due=null;
+  if(d.due_date)due=new Date(d.due_date+'T00:00:00');
+  else if(nextDue&&d.plan_day){const [yy,mm]=nextDue.due_month.split('-').map(Number);due=new Date(yy,mm-1,Math.min(d.plan_day,new Date(yy,mm,0).getDate()));}
+  if(due){
+    const days=Math.round((due-today)/86400000);
+    const ds=due.toLocaleDateString('en-SG',{day:'numeric',month:'short'});
+    return days<0?{t:`Overdue · was due ${ds}`,c:'var(--red)'}:days===0?{t:`Due today`,c:'var(--orange)'}:{t:`Due ${ds} · in ${days} day${days===1?'':'s'}`,c:days<=7?'var(--orange)':'var(--text2)'};
+  }
+  if(nextDue){const [yy,mm]=nextDue.due_month.split('-').map(Number);const nm=new Date(yy,mm-1,1).toLocaleDateString('en-SG',{month:'short'});return {t:`Due in ${nm}`,c:'var(--text2)'};}
+  return null;
 }
 async function deleteDebt(id){
   if(!confirm('Remove this debt from the list?'))return;
@@ -1246,10 +1454,13 @@ function checkSubsDue(){
   const wrap=document.getElementById('subs-due-banner');if(!wrap)return;
   const total=subscriptions.reduce((t,x)=>t+Number(x.amount),0);
   const day=new Date().getDate();
-  if(!total){wrap.innerHTML='';return;}
-  if(day<PAY_DAY)wrap.innerHTML=`<div class="notify-banner"><span class="nb-text">Payday top-up: put <strong>${fmt(total)}</strong> into Maybank on the ${ord(PAY_DAY)} (${PAY_DAY-day} day${PAY_DAY-day===1?'':'s'} to go)</span></div>`;
-  else if(day===PAY_DAY)wrap.innerHTML=`<div class="notify-banner"><span class="nb-text">Today: top up Maybank with <strong>${fmt(total)}</strong> for this month's subscriptions</span></div>`;
-  else wrap.innerHTML='';
+  let h='';
+  if(total){
+    if(day<PAY_DAY)h+=`<div class="notify-banner"><span class="nb-text">Payday top-up: put <strong>${fmt(total)}</strong> into Maybank on the ${ord(PAY_DAY)} (${PAY_DAY-day} day${PAY_DAY-day===1?'':'s'} to go)</span></div>`;
+    else if(day===PAY_DAY)h+=`<div class="notify-banner"><span class="nb-text">Today: top up Maybank with <strong>${fmt(total)}</strong> for this month's subscriptions</span></div>`;
+  }
+  loans.filter(loanWindow).forEach(l=>{h+=`<div class="notify-banner"><span class="nb-text">Move <strong>${fmt(l.monthly)}</strong> into your OCBC account before the 1st (education loan)</span></div>`;});
+  wrap.innerHTML=h;
 }
 
 function renderEarnings(){
@@ -1264,7 +1475,7 @@ function renderEarnings(){
   const monthNet=monthReceived-monthSpendAmt;
   const monthIncome=earnings.filter(e=>inMonth(e.ts||e.id)).reduce((s,e)=>s+e.amount,0);
   // Overview
-  renderMoneyOverview();renderOwe();
+  renderMoneyOverview();renderOwe();renderLoan();renderNeed();
   document.getElementById('overview-pending').textContent='$'+totalPending.toFixed(2);
   // Pending section
   const pendingEntries=earnings.filter(e=>e.paid===false);
@@ -1294,16 +1505,8 @@ function renderEarnings(){
     const badge=e.paid===false?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#1a1200;color:var(--orange);margin-left:4px">pending</span>`:`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#0a1a0a;color:var(--green);margin-left:4px">paid</span>`;
     return `<div class="earn-entry"><div class="earn-source"><div class="earn-name" style="display:flex;align-items:center">${e.source}${badge}</div>${e.note?`<div class="earn-note-text">${e.note}</div>`:''}<div class="earn-note-text">Worked: ${e.date}</div>${e.payDate?`<div class="earn-note-text">Pay date: ${e.payDate}</div>`:''}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="earn-amt">+$${e.amount.toFixed(2)}</div>${e.paid===false?`<button onclick="markPaid(${e.id})" style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--accent);color:#0a0a0a;border:none;cursor:pointer;font-family:'DM Sans',sans-serif">Mark paid</button>`:''}</div><button class="del-btn" onclick="deleteEarning(${e.id})">×</button></div>`;
   }).join(''):'<div class="empty">No income logged yet</div>');
-  // Spending
-  document.getElementById('month-spend').textContent='$'+monthSpendAmt.toFixed(2);
-  const mnet=monthReceived-monthSpendAmt;
-  document.getElementById('month-net').textContent=(mnet>=0?'+':'')+mnet.toFixed(2);
-  document.getElementById('month-net').style.color=mnet>=0?'var(--green)':'var(--red)';
-  const cats=['Food','Transport','Shopping','Entertainment','Health','Subscriptions','Other'];
-  const mSpend=spending.filter(s=>inMonth(s.ts||s.id));
-  const catEl=document.getElementById('spend-by-cat');
-  catEl.innerHTML=mSpend.length?cats.map(cat=>{const amt=mSpend.filter(s=>s.category===cat).reduce((s,e)=>s+e.amount,0);if(!amt)return'';const pct=Math.round((amt/monthSpendAmt)*100);return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--text2)">${cat}</span><span style="font-weight:500">$${amt.toFixed(2)} <span style="color:var(--text3);font-weight:400">${pct}%</span></span></div><div style="height:4px;background:var(--bg3);border-radius:2px"><div style="height:4px;width:${pct}%;background:var(--accent);border-radius:2px"></div></div></div>`;}).join(''):'<div class="empty">No spending this month</div>';
-  document.getElementById('spend-log').innerHTML=spending.length?spending.map(s=>`<div class="earn-entry"><div class="earn-source"><div class="earn-name">${s.category}</div>${s.note?`<div class="earn-note-text">${s.note}</div>`:''}</div><div class="earn-amt" style="color:var(--red)">-$${s.amount.toFixed(2)}</div><div class="earn-date">${s.date}</div><button class="del-btn" onclick="deleteSpend(${s.id})">×</button></div>`).join(''):'<div class="empty">No spending logged yet</div>';
+  // Spending (statement view)
+  renderSpendTab();
   // Subs
   const subsTotal=subscriptions.reduce((s,x)=>s+x.amount,0);
   document.getElementById('subs-total').textContent='$'+subsTotal.toFixed(2);
