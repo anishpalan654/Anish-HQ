@@ -862,7 +862,7 @@ function renderToday(){
   $('t-safe-sub').textContent=`${fmt(m.total)} in the bank · ${fmt(m.dueMonth)} owed this month · ${m.subsLeft>0?fmt(m.subsLeft)+' subscriptions for the 8th':'subscriptions covered'}${m.loanLeft>0?' · '+fmt(m.loanLeft)+' loan to OCBC':''}`;
 
   const dayStr=toPickerVal(viewingDate);
-  const spentDay=spending.filter(s=>!s.debt_payment&&toPickerVal(new Date(s.ts||s.id))===dayStr).reduce((s,e)=>s+Number(e.amount),0);
+  const spentDay=spending.filter(s=>!s.debt_payment&&s.category!=='Subscriptions'&&toPickerVal(new Date(s.ts||s.id))===dayStr).reduce((s,e)=>s+Number(e.amount),0);
   $('t-spent').textContent=fmt(spentDay);
 
   $('t-habits').innerHTML=HABITS.map(hb=>{
@@ -1006,21 +1006,23 @@ function renderSpendTab(){
   $('stmt-month-label').textContent=stmtMonth.toLocaleDateString('en-SG',{month:'long',year:'numeric'});
   document.querySelectorAll('#stmt-chips .chip').forEach(c=>{c.className='chip'+(c.dataset.a===stmtAcct?' active':'');});
   const rows=spending.filter(x=>monthKeyOf(x.ts||x.id)===key&&(!stmtAcct||x.account===stmtAcct)).sort((a,b)=>(b.ts||b.id)-(a.ts||a.id));
-  const spendRows=rows.filter(x=>!x.debt_payment);
+  const catRows=rows.filter(x=>!x.debt_payment);
+  const spendRows=catRows.filter(x=>x.category!=='Subscriptions');
   const debtRows=rows.filter(x=>x.debt_payment);
   const out=spendRows.reduce((t,x)=>t+Number(x.amount),0);
+  const catTotal=catRows.reduce((t,x)=>t+Number(x.amount),0);
   const debtPaid=debtRows.reduce((t,x)=>t+Number(x.amount),0);
   const inc=earnings.filter(e=>monthKeyOf(e.ts||e.id)===key).reduce((t,e)=>t+Number(e.amount),0);
   let g=`<div class="card"><div class="card-label">Spent</div><div class="card-value" style="color:var(--red)">${fmt(out)}</div></div>`;
   g+=`<div class="card"><div class="card-label">Debt payments</div><div class="card-value" style="color:var(--orange)">${fmt(debtPaid)}</div></div>`;
   if(!stmtAcct){g+=`<div class="card"><div class="card-label">Money in</div><div class="card-value" style="color:var(--green)">${fmt(inc)}</div></div><div class="card"><div class="card-label">Net</div><div class="card-value" style="color:${inc-out-debtPaid>=0?'var(--green)':'var(--red)'}">${inc-out-debtPaid<0?'-':''}${fmt(Math.abs(inc-out-debtPaid))}</div></div>`;}
   $('stmt-grid').innerHTML=g;
-  $('stmt-note').textContent=stmtAcct?`Showing only purchases logged against ${stmtAcct}. Cash and older purchases have no account, so they only show under All.`:'Debt payments are kept out of "Spent".';
-  const cats=CATS.concat([...new Set(spendRows.map(x=>x.category).filter(c=>c&&!CATS.includes(c)))]);
-  $('spend-by-cat').innerHTML=spendRows.length?cats.map(cat=>{
-    const list=spendRows.filter(x=>x.category===cat);const amt=list.reduce((t,x)=>t+Number(x.amount),0);if(!amt)return '';
-    const pct=Math.round(amt/out*100);const open=openCat===cat;
-    return `<div style="margin-bottom:10px"><div style="cursor:pointer" onclick="toggleCat('${cat}')"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--text2)">${open?'▾':'▸'} ${cat} <span style="color:var(--text3)">(${list.length})</span></span><span style="font-weight:500">$${amt.toFixed(2)} <span style="color:var(--text3);font-weight:400">${pct}%</span></span></div><div style="height:4px;background:var(--bg3);border-radius:2px"><div style="height:4px;width:${pct}%;background:var(--accent);border-radius:2px"></div></div></div>${open?`<div style="margin-top:6px;padding-left:10px;border-left:2px solid var(--border)">${list.map(spendRowHTML).join('')}</div>`:''}</div>`;
+  $('stmt-note').textContent=stmtAcct?`Showing only purchases logged against ${stmtAcct}. Cash and older purchases have no account, so they only show under All.`:'Debt payments and subscriptions are kept out of "Spent" (subscriptions are covered by your Maybank top-up).';
+  const cats=CATS.concat([...new Set(catRows.map(x=>x.category).filter(c=>c&&!CATS.includes(c)))]);
+  $('spend-by-cat').innerHTML=catRows.length?cats.map(cat=>{
+    const list=catRows.filter(x=>x.category===cat);const amt=list.reduce((t,x)=>t+Number(x.amount),0);if(!amt)return '';
+    const pct=Math.round(amt/catTotal*100);const open=openCat===cat;
+    return `<div style="margin-bottom:10px"><div style="cursor:pointer" onclick="toggleCat('${cat}')"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--text2)">${open?'▾':'▸'} ${cat} <span style="color:var(--text3)">(${list.length})</span>${cat==='Subscriptions'?'<span style="color:var(--text3);font-size:11px"> · not in Spent</span>':''}</span><span style="font-weight:500">$${amt.toFixed(2)} <span style="color:var(--text3);font-weight:400">${pct}%</span></span></div><div style="height:4px;background:var(--bg3);border-radius:2px"><div style="height:4px;width:${pct}%;background:var(--accent);border-radius:2px"></div></div></div>${open?`<div style="margin-top:6px;padding-left:10px;border-left:2px solid var(--border)">${list.map(spendRowHTML).join('')}</div>`:''}</div>`;
   }).join(''):'<div class="empty">No spending this month</div>';
   $('spend-log').innerHTML=rows.length?rows.map(spendRowHTML).join(''):'<div class="empty">Nothing logged this month</div>';
   const tr=transfers.filter(t=>monthKeyOf(t.ts||t.id)===key&&(!stmtAcct||t.account===stmtAcct)).sort((a,b)=>(b.ts||b.id)-(a.ts||a.id));
