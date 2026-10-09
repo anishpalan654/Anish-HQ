@@ -82,9 +82,6 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 .install-banner{background:#0d1f0d;border:1px solid #1a3a1a;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--green);line-height:1.5}
 .install-banner strong{color:var(--accent)}
 .loading-bar{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
-.priority-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:6px}
-.p1-dot{background:#ff5c5c}.p2-dot{background:#ff9a3c}.p3-dot{background:#4a9eff}.p4-dot{background:#555}
-.todoist-badge{font-size:10px;padding:2px 7px;border-radius:10px;background:#1a1f2e;color:#4a9eff;margin-left:4px;flex-shrink:0}
 .quick-log-row{display:flex;gap:8px;margin-top:12px}
 .ql-btn{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
 .ql-btn:active{opacity:0.8;transform:scale(0.97)}
@@ -123,27 +120,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   <button class="nav-btn active" onclick="showView('today')" id="nav-today">◈ Today</button>
   <button class="nav-btn" onclick="showView('progress')" id="nav-progress">▲ Progress</button>
   <button class="nav-btn" onclick="showView('earnings')" id="nav-earnings">$ Money</button>
-  <button class="nav-btn" onclick="showTokenModal()" id="nav-settings">⚙</button>
 </nav>
-
-<!-- TODOIST TOKEN MODAL -->
-<div id="token-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:300;padding:20px">
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:420px;margin:80px auto 0">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <span style="font-size:16px;font-weight:500">Todoist Setup</span>
-      <button onclick="closeTokenModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
-    </div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">
-      Paste your Todoist API token below. Get it from <strong style="color:var(--text)">todoist.com → Settings → Integrations → API token</strong>.
-    </div>
-    <input type="password" id="token-input" placeholder="Paste API token here" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-size:14px;font-family:'DM Mono',monospace;outline:none;margin-bottom:10px">
-    <div id="token-status" style="font-size:12px;color:var(--text3);margin-bottom:12px;min-height:16px"></div>
-    <div style="display:flex;gap:8px">
-      <button onclick="saveToken()" style="flex:1;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Save & connect</button>
-      <button onclick="clearToken()" style="background:var(--bg3);color:var(--red);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Clear</button>
-    </div>
-  </div>
-</div>
 
 <!-- QUICK LOG MODAL -->
 <div id="quick-log-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;padding:20px">
@@ -180,6 +157,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
         <option value="DBS">Paid from DBS</option>
         <option value="Trust">Paid from Trust</option>
         <option value="GXS">Paid from GXS</option>
+        <option value="OCBC">Paid from OCBC</option>
       </select>
     </div>
     <input type="text" id="ql-note" placeholder="Note (optional)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:14px">
@@ -258,7 +236,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 
   <div id="mtab-overview">
     <div class="card" style="border:1px solid #2a3a1a">
-      <div class="card-label">Money across DBS · Trust · GXS</div>
+      <div class="card-label">Money across DBS · Trust · GXS · OCBC</div>
       <div class="big-money" id="ov-total">$0</div>
       <div id="ov-accts" style="margin-top:10px"></div>
       <div class="card-sub" style="margin-top:8px">Updates automatically from your bank emails. Tap an account to correct it.</div>
@@ -331,6 +309,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
       <div class="chip" data-a="DBS" onclick="setStmtAcct('DBS')">DBS</div>
       <div class="chip" data-a="Trust" onclick="setStmtAcct('Trust')">Trust</div>
       <div class="chip" data-a="GXS" onclick="setStmtAcct('GXS')">GXS</div>
+      <div class="chip" data-a="OCBC" onclick="setStmtAcct('OCBC')">OCBC</div>
     </div>
     <div class="grid2" id="stmt-grid"></div>
     <div id="stmt-note" style="font-size:11px;color:var(--text3);margin:8px 0"></div>
@@ -413,32 +392,15 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   </div>
 </div>
 
-<!-- EDIT MODAL -->
-<div id="edit-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;padding:20px">
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:420px;margin:60px auto 0">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <span style="font-size:16px;font-weight:500">Edit event</span>
-      <button onclick="closeEditModal()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button>
-    </div>
-    <input type="text" id="edit-text" placeholder="Event name" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:10px">
-    <div style="display:flex;gap:6px;margin-bottom:6px;font-size:12px;color:var(--text3)"><span style="flex:1">Start</span><span style="flex:1">End</span></div>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input type="datetime-local" id="edit-start" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;outline:none">
-      <input type="datetime-local" id="edit-end" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;outline:none">
-    </div>
-    <input type="text" id="edit-location" placeholder="Location (optional)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:14px">
-    <div style="display:flex;gap:8px">
-      <button onclick="saveEditModal()" style="flex:1;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--radius-sm);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
-      <button onclick="deleteEditModal()" style="flex:1;background:var(--bg3);color:var(--red);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Delete</button>
-    </div>
-  </div>
-</div>
-
 <!-- SPEND EDIT MODAL -->
 <div id="spend-edit-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:200;padding:20px">
   <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;max-width:420px;margin:90px auto 0">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:16px;font-weight:500">Edit purchase</span><button onclick="closeSpendEdit()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer">×</button></div>
     <div id="se-info" style="font-size:13px;color:var(--text2);margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1"><div class="card-label">Amount</div><input type="number" id="se-amt" class="inp" step="0.01" min="0" inputmode="decimal"></div>
+      <div style="flex:1.3"><div class="card-label">Paid from</div><select id="se-acct" class="inp"><option value="">Cash / other card</option><option value="DBS">DBS</option><option value="Trust">Trust</option><option value="GXS">GXS</option><option value="OCBC">OCBC</option></select></div>
+    </div>
     <div class="card-label">Category (this purchase only)</div>
     <select id="se-cat" class="inp" style="margin-bottom:12px"></select>
     <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:14px"><input type="checkbox" id="se-debt" style="width:18px;height:18px"> This was a debt payment (leave out of spending)</label>
@@ -476,93 +438,6 @@ const SUPA_URL = 'https://ldwrmslneeugnbfwnysl.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxkd3Jtc2xuZWV1Z25iZndueXNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODMwMzYsImV4cCI6MjA5NDg1OTAzNn0.veppG37-DZswX606lktrtRkwx7JY7Bi9KXCTdPIKEOg';
 const H = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
 
-// ── TODOIST ──
-const TODOIST_URL = 'https://api.todoist.com/api/v1';
-let todoistToken = localStorage.getItem('anish_todoist_token') || '';
-let todoistTasks = [];
-
-async function todoistGet(path) {
-  if(!todoistToken) return null;
-  try {
-    const r = await fetch(TODOIST_URL+path, {method:'GET', headers:{'Authorization':'Bearer '+todoistToken}, mode:'cors', credentials:'omit'});
-    return r.ok ? r.json() : null;
-  } catch(e) { console.error('Todoist GET error',e); return null; }
-}
-
-async function todoistPost(path, body) {
-  if(!todoistToken) return null;
-  try {
-    const r = await fetch(TODOIST_URL+path, {method:'POST', headers:{'Authorization':'Bearer '+todoistToken,'Content-Type':'application/json'}, mode:'cors', credentials:'omit', body:JSON.stringify(body)});
-    return r.ok ? r.json() : null;
-  } catch(e) { console.error('Todoist POST error',e); return null; }
-}
-
-async function todoistClose(id) {
-  if(!todoistToken) return;
-  try { await fetch(TODOIST_URL+'/tasks/'+id+'/close', {method:'POST', headers:{'Authorization':'Bearer '+todoistToken}, mode:'cors', credentials:'omit'}); }
-  catch(e) {}
-}
-
-async function todoistDelete(id) {
-  if(!todoistToken) return;
-  try { await fetch(TODOIST_URL+'/tasks/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+todoistToken}, mode:'cors', credentials:'omit'}); }
-  catch(e) {}
-}
-
-async function loadTodoistTasks() {
-  if(!todoistToken) { todoistTasks=[]; return; }
-  const data = await todoistGet('/tasks/filter?query=today%7Coverdue');
-  if(data && Array.isArray(data.results||data)) {
-    const tasks = data.results || data;
-    todoistTasks = tasks.map(t=>({
-      id:'td_'+t.id, _todoistId:t.id, type:'task', text:t.content,
-      done:false, date:null, endDate:null, location:'', created:'',
-      priority:t.priority, projectId:t.project_id
-    }));
-  } else { todoistTasks=[]; }
-}
-
-// priority: todoist uses 4=p1, 3=p2, 2=p3, 1=p4
-function priorityDot(p) {
-  const map={4:'p1-dot',3:'p2-dot',2:'p3-dot',1:'p4-dot'};
-  const label={4:'p1',3:'p2',2:'p3',1:'p4'};
-  return `<span class="priority-dot ${map[p]||'p4-dot'}" title="${label[p]||'p4'}"></span>`;
-}
-
-// Token modal
-function showTokenModal(){
-  document.getElementById('token-input').value=todoistToken;
-  document.getElementById('token-status').textContent=todoistToken?'✓ Token saved':'No token set';
-  document.getElementById('token-status').style.color=todoistToken?'var(--green)':'var(--text3)';
-  document.getElementById('token-modal').style.display='block';
-}
-function closeTokenModal(){document.getElementById('token-modal').style.display='none';}
-async function saveToken(){
-  const val=document.getElementById('token-input').value.trim();
-  if(!val)return;
-  const el=document.getElementById('token-status');
-  el.textContent='Testing...';el.style.color='var(--text3)';
-  try {
-    const r=await fetch(TODOIST_URL+'/tasks/filter?query=today', {method:'GET', headers:{'Authorization':'Bearer '+val}, mode:'cors', credentials:'omit'});
-    if(r.ok){
-      todoistToken=val;localStorage.setItem('anish_todoist_token',val);
-      el.textContent='✓ Connected!';el.style.color='var(--green)';
-      await loadTodoistTasks();renderToday();renderItems();
-      setTimeout(closeTokenModal,800);
-    } else {
-      el.textContent='✗ Invalid token — check and retry';el.style.color='var(--red)';
-    }
-  } catch(e){el.textContent='✗ Network error';el.style.color='var(--red)';}
-}
-function clearToken(){
-  todoistToken='';localStorage.removeItem('anish_todoist_token');
-  todoistTasks=[];
-  document.getElementById('token-input').value='';
-  document.getElementById('token-status').textContent='Token cleared';
-  document.getElementById('token-status').style.color='var(--text3)';
-  renderToday();renderItems();
-}
-
 async function dbGet(table) {
   const r = await fetch(`${SUPA_URL}/rest/v1/${table}?order=id.desc`,{headers:{...H,'Prefer':'return=representation'}});
   return r.ok ? r.json() : [];
@@ -583,18 +458,16 @@ async function dbDelete(table, id) {
 let items=[], earnings=[], spending=[], subscriptions=[];
 let accounts=[], debts=[], installments=[], habitLog=[], assignments=[], loans=[], transfers=[];
 let incomeGoals=[], savingsGoals=[], savingsContributions=[], currentGoal=null;
-let currentType='task', currentMoneyTab='overview', viewingDate=new Date(), editingId=null;
+let currentMoneyTab='overview', viewingDate=new Date();
 let notifGranted = localStorage.getItem('anish_notif')==='granted';
 
 // ── LOAD ──
 async function loadAll() {
-  const [supaResults] = await Promise.all([
-    Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions'), dbGet('income_goals'), dbGet('savings_goals'), dbGet('savings_contributions'), dbGet('accounts'), dbGet('debts'), dbGet('debt_installments'), dbGet('habit_log'), dbGet('assignments'), dbGet('loans'), dbGet('transfers')]),
-    loadTodoistTasks()
-  ]);
+  try{await fetch(`${SUPA_URL}/rest/v1/rpc/run_loan_deductions`,{method:'POST',headers:H,body:'{}'});}catch(e){} // takes the OCBC loan off the OCBC balance once on/after the 1st
+  const supaResults = await Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions'), dbGet('income_goals'), dbGet('savings_goals'), dbGet('savings_contributions'), dbGet('accounts'), dbGet('debts'), dbGet('debt_installments'), dbGet('habit_log'), dbGet('assignments'), dbGet('loans'), dbGet('transfers')]);
   [items, earnings, spending, subscriptions, incomeGoals, savingsGoals, savingsContributions, accounts, debts, installments, habitLog, assignments, loans, transfers] = supaResults;
   loans=loans.map(l=>({...l,drawn:Number(l.drawn),monthly:Number(l.monthly)}));
-  const order=['DBS','Trust','GXS'];
+  const order=['DBS','Trust','GXS','OCBC'];
   accounts=accounts.map(a=>({...a,balance:Number(a.balance)})).sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   debts=debts.map(d=>({...d,total:Number(d.total),paid:Number(d.paid||0)}));
   installments=installments.map(i=>({...i,amount:Number(i.amount)}));
@@ -778,10 +651,15 @@ function subCycleDue(sub){
   const d=sub.billingDay||1;
   return d>=PAY_DAY?new Date(start.getFullYear(),start.getMonth(),d):new Date(start.getFullYear(),start.getMonth()+1,d);
 }
-function loanWindow(l){ // true from the 25th until the 1st when a payment is coming
-  const n=new Date();const nextFirst=new Date(n.getFullYear(),n.getMonth()+1,1);
+function loanUpcomingFirst(){const n=new Date();return new Date(n.getFullYear(),n.getMonth()+1,1);}
+function ocbcBalance(){const a=accounts.find(x=>x.name==='OCBC');return a?a.balance:0;}
+function loanWindow(l){ // from payday (the 8th) until the 1st: the next payment comes out of this month's pay, so it's set aside
   const fd=l.first_due?new Date(l.first_due+'T00:00:00'):null;
-  return !!fd&&nextFirst>=fd&&n.getDate()>=25;
+  return !!fd&&loanUpcomingFirst()>=fd&&new Date().getDate()>=PAY_DAY;
+}
+function loanShort(){ // how much more needs moving into OCBC before the 1st
+  const need=loans.filter(loanWindow).reduce((t,l)=>t+l.monthly,0);
+  return Math.max(0,need-ocbcBalance());
 }
 function loanNextDue(l){
   const n=new Date();n.setHours(0,0,0,0);
@@ -928,7 +806,7 @@ function renderMoneyOverview(){
   $('ov-calc').innerHTML=`<div class="calc-row"><span>In the bank</span><span>${fmt(m.total)}</span></div>
   <div class="calc-row"><span>− Owed this month</span><span>${fmt(m.dueMonth)}</span></div>
   <div class="calc-row"><span>− Subscriptions for the 8th top-up</span><span>${fmt(m.subsLeft)}</span></div>
-  ${m.loanLeft>0?`<div class="calc-row"><span>− OCBC loan (move before the 1st)</span><span>${fmt(m.loanLeft)}</span></div>`:''}
+  ${m.loanLeft>0?`<div class="calc-row"><span>− OCBC loan due on the 1st</span><span>${fmt(m.loanLeft)}</span></div>`:''}
   <div class="calc-row total"><span>Safe to spend</span><span style="color:${m.safe<0?'var(--red)':'var(--green)'}">${m.safe<0?'-':''}${fmt(Math.abs(m.safe))}</span></div>
   <div class="calc-row" style="margin-top:8px"><span>Still owed in total</span><span>${fmt(m.owedTotal)}</span></div>
     <div class="calc-row"><span>If I cleared every debt today</span><span>${m.total-m.owedTotal<0?'-':''}${fmt(Math.abs(m.total-m.owedTotal))}</span></div>`;
@@ -963,6 +841,8 @@ function renderLoan(){
     <div style="display:flex;justify-content:space-between;align-items:baseline"><div class="card-value" style="font-size:22px">${fmt(l.monthly)}<span style="font-size:12px;color:var(--text3);font-weight:400"> /month${l.monthly_is_estimate?' (estimate)':''}</span></div></div>
     <div class="calc-row" style="margin-top:6px"><span>Drawn so far</span><span>${fmt(l.drawn)}</span></div>
     <div class="calc-row"><span>Next deduction (OCBC account)</span><span>${ds} · ${days} day${days===1?'':'s'}</span></div>
+    <div class="calc-row"><span>In OCBC now</span><span>${fmt(ocbcBalance())}</span></div>
+    ${loanWindow(l)?(loanShort()>0?`<div class="calc-row"><span style="color:var(--orange)">Move ${fmt(loanShort())} more into OCBC before the 1st</span><span></span></div>`:`<div class="calc-row"><span style="color:var(--green)">OCBC has enough for the 1st ✓</span><span></span></div>`):''}
     ${l.rate?`<div class="calc-row"><span>Rate / term</span><span>${l.rate}% · ${l.months} months</span></div>`:''}
     <div style="display:flex;gap:6px;margin-top:10px"><button class="mini-btn ghost" onclick="editLoan(${l.id},'drawn')">Update drawn amount</button><button class="mini-btn ghost" onclick="editLoan(${l.id},'monthly')">Set real monthly</button></div>`;
   }).join('');
@@ -998,7 +878,7 @@ function toggleCat(c){openCat=openCat===c?null:c;renderSpendTab();}
 function spendRowHTML(x){
   const d=new Date(x.ts||x.id);
   const ds=d.toLocaleDateString('en-SG',{day:'numeric',month:'short'});
-  return `<div class="earn-entry" style="cursor:pointer" onclick="openSpendEdit(${x.id})"><div class="earn-source"><div class="earn-name">${(x.note||x.category||'').replace(/^auto: /,'')}</div><div class="earn-note-text">${x.category}${x.account?' · '+x.account:''}${x.debt_payment?' · debt payment':''}</div></div><div class="earn-amt" style="color:var(--red)">-$${Number(x.amount).toFixed(2)}</div><div class="earn-date">${ds}</div></div>`;
+  return `<div class="earn-entry" style="cursor:pointer" onclick="openSpendEdit(${x.id})"><div class="earn-source"><div class="earn-name">${(x.note||x.category||'').replace(/^auto: /,'')}</div><div class="earn-note-text">${x.category}${x.account?' · '+x.account:''}${x.debt_payment?' · debt payment':''}</div></div>${Number(x.amount)>0?`<div class="earn-amt" style="color:var(--red)">-$${Number(x.amount).toFixed(2)}</div>`:`<div class="earn-amt" style="color:var(--orange);font-size:12px">$0 · tap to fix</div>`}<div class="earn-date">${ds}</div></div>`;
 }
 function renderSpendTab(){
   if(!$('stmt-month-label'))return;
@@ -1035,14 +915,27 @@ function openSpendEdit(id){
   const cats=CATS.includes(x.category)?CATS:CATS.concat([x.category]);
   $('se-cat').innerHTML=cats.map(c=>`<option${c===x.category?' selected':''}>${c}</option>`).join('');
   $('se-debt').checked=!!x.debt_payment;
+  $('se-amt').value=Number(x.amount)>0?Number(x.amount):'';
+  $('se-acct').value=x.account||'';
   $('spend-edit-modal').style.display='block';
+  if(!(Number(x.amount)>0))setTimeout(()=>$('se-amt').focus(),50);
 }
 function closeSpendEdit(){$('spend-edit-modal').style.display='none';editingSpendId=null;}
 async function saveSpendEdit(){
   const x=spending.find(y=>y.id===editingSpendId);if(!x)return;
-  x.category=$('se-cat').value;x.debt_payment=$('se-debt').checked;
+  const amt=parseFloat($('se-amt').value);const acct=$('se-acct').value||null;
+  const patch={category:$('se-cat').value,debt_payment:$('se-debt').checked};
+  const newAmt=isNaN(amt)||amt<0?Number(x.amount):Math.round(amt*100)/100;
+  if(newAmt!==Number(x.amount))patch.amount=newAmt;
+  if(acct!==(x.account||null))patch.account=acct;
+  // balances follow the edit (the database does the same with a trigger)
+  if('amount' in patch||'account' in patch){
+    if(x.account){const a=accounts.find(z=>z.name===x.account);if(a)a.balance+=Number(x.amount);}
+    if(acct){const a=accounts.find(z=>z.name===acct);if(a)a.balance-=newAmt;}
+  }
+  Object.assign(x,patch,{amount:newAmt,account:acct});
   const id=x.id;closeSpendEdit();renderEarnings();renderToday();
-  await dbUpdate('spending',id,{category:x.category,debt_payment:x.debt_payment});
+  await dbUpdate('spending',id,patch);
 }
 async function deleteSpendEdit(){
   const id=editingSpendId;if(!id)return;
@@ -1157,24 +1050,6 @@ async function deleteDebt(id){
   await dbDelete('debts',id);
 }
 
-async function quickAdd(text){
-  if(todoistToken) {
-    const result = await todoistPost('/tasks', {content:text, due_string:'today'});
-    if(result) {
-      todoistTasks.unshift({
-        id:'td_'+result.id, _todoistId:result.id, type:'task', text:result.content,
-        done:false, date:null, endDate:null, location:'', created:'',
-        priority:result.priority||1, projectId:result.project_id
-      });
-    }
-  } else {
-    const entry={id:Date.now(),type:'task',text,done:false,date:null,end_date:null,location:'',created:new Date().toLocaleDateString('en-SG',{day:'numeric',month:'short'})};
-    await dbInsert('items',entry);
-    items.unshift({...entry,endDate:null});
-  }
-  renderToday();
-}
-
 // ── NOTIFICATIONS ──
 function renderNotifBanner(){
   const wrap=document.getElementById('notify-banner-wrap');
@@ -1232,125 +1107,6 @@ async function submitQuickLog(){
   }
   closeQuickLog();
   renderToday();renderEarnings();renderProgress();
-}
-
-// ── CAPTURE ──
-function setType(t){
-  currentType=t;
-  ['task','event','note'].forEach(x=>{document.getElementById('chip-'+x).className='chip'+(t===x?' active':'');});
-  document.getElementById('date-row').style.display=t==='event'?'block':'none';
-}
-
-async function addItem(){
-  const inp=document.getElementById('capture-input');
-  const text=inp.value.trim();
-  if(!text)return;
-  if(currentType==='task' && todoistToken) {
-    // push to Todoist
-    const result = await todoistPost('/tasks', {content:text, due_string:'today'});
-    if(result) {
-      todoistTasks.unshift({
-        id:'td_'+result.id, _todoistId:result.id, type:'task', text:result.content,
-        done:false, date:null, endDate:null, location:'', created:'',
-        priority:result.priority||1, projectId:result.project_id
-      });
-    }
-    inp.value='';
-    renderToday(); renderItems();
-    return;
-  }
-  // events/notes (or tasks if no Todoist) go to Supabase
-  const entry={id:Date.now(),type:currentType,text,done:false,
-    date:currentType==='event'?document.getElementById('event-date').value:null,
-    end_date:currentType==='event'?document.getElementById('event-end').value:null,
-    location:document.getElementById('item-location').value.trim(),
-    created:new Date().toLocaleDateString('en-SG',{day:'numeric',month:'short'})};
-  await dbInsert('items',entry);
-  items.unshift({...entry,endDate:entry.end_date});
-  inp.value='';document.getElementById('item-location').value='';
-  if(currentType==='event'){document.getElementById('event-date').value='';document.getElementById('event-end').value='';}
-  renderItems();renderToday();
-}
-
-async function toggleDone(id){
-  const it=items.find(x=>x.id===id);
-  if(!it)return;
-  it.done=!it.done;
-  await dbUpdate('items',id,{done:it.done});
-  renderItems();renderToday();
-}
-
-async function deleteItem(id){
-  items=items.filter(x=>x.id!==id);
-  await dbDelete('items',id);
-  renderItems();renderToday();
-}
-
-function todoistItemHTML(it) {
-  const p = it.priority||1;
-  return `<div class="item">
-    <div class="item-check" onclick="closeTodoistTask('${it._todoistId}',this)"></div>
-    <div class="item-text" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
-      ${priorityDot(p)}${it.text}<span class="todoist-badge">Todoist</span>
-    </div>
-    <button class="del-btn" onclick="deleteTodoistTask('${it._todoistId}')">×</button>
-  </div>`;
-}
-
-async function closeTodoistTask(todoistId, el) {
-  el.classList.add('done');
-  el.closest('.item').querySelector('.item-text').classList.add('done');
-  await todoistClose(todoistId);
-  todoistTasks = todoistTasks.filter(t=>t._todoistId!==todoistId);
-  renderToday();
-}
-
-async function deleteTodoistTask(todoistId) {
-  await todoistDelete(todoistId);
-  todoistTasks = todoistTasks.filter(t=>t._todoistId!==todoistId);
-  renderToday(); renderItems();
-}
-
-function itemHTML(it){
-  return `<div class="item">
-    ${it.type==='task'?`<div class="item-check${it.done?' done':''}" onclick="toggleDone(${it.id})"></div>`:''}
-    <div class="item-text${it.done?' done':''}">
-      ${it.text}
-      ${it.date?`<div class="item-meta">📅 ${new Date(it.date).toLocaleString('en-SG',{dateStyle:'medium',timeStyle:'short'})}${it.endDate?' – '+new Date(it.endDate).toLocaleTimeString('en-SG',{timeStyle:'short'}):''}</div>`:''}
-      ${it.location?`<div class="item-meta">📍 ${it.location}</div>`:''}
-      ${it.type!=='task'?`<div class="item-meta">${it.created}</div>`:''}
-    </div>
-    <span class="tag tag-${it.type}">${it.type}</span>
-    <button class="del-btn" onclick="deleteItem(${it.id})">×</button>
-  </div>`;
-}
-
-function renderItems(){}
-
-// ── EDIT MODAL ──
-function openEditModal(id){
-  const it=items.find(x=>x.id===id);if(!it)return;
-  editingId=id;
-  document.getElementById('edit-text').value=it.text;
-  document.getElementById('edit-start').value=it.date||'';
-  document.getElementById('edit-end').value=it.endDate||'';
-  document.getElementById('edit-location').value=it.location||'';
-  document.getElementById('edit-modal').style.display='block';
-}
-function closeEditModal(){document.getElementById('edit-modal').style.display='none';editingId=null;}
-async function saveEditModal(){
-  const it=items.find(x=>x.id===editingId);if(!it)return;
-  it.text=document.getElementById('edit-text').value.trim()||it.text;
-  it.date=document.getElementById('edit-start').value;
-  it.endDate=document.getElementById('edit-end').value;
-  it.location=document.getElementById('edit-location').value.trim();
-  await dbUpdate('items',editingId,{text:it.text,date:it.date,end_date:it.endDate,location:it.location});
-  closeEditModal();renderToday();renderItems();
-}
-async function deleteEditModal(){
-  items=items.filter(x=>x.id!==editingId);
-  await dbDelete('items',editingId);
-  closeEditModal();renderToday();renderItems();
 }
 
 // ── MONEY ──
@@ -1475,7 +1231,7 @@ function checkSubsDue(){
     if(day<PAY_DAY)h+=`<div class="notify-banner"><span class="nb-text">Payday top-up: put <strong>${fmt(total)}</strong> into Maybank on the ${ord(PAY_DAY)} (${PAY_DAY-day} day${PAY_DAY-day===1?'':'s'} to go)</span></div>`;
     else if(day===PAY_DAY)h+=`<div class="notify-banner"><span class="nb-text">Today: top up Maybank with <strong>${fmt(total)}</strong> for this month's subscriptions</span></div>`;
   }
-  loans.filter(loanWindow).forEach(l=>{h+=`<div class="notify-banner"><span class="nb-text">Move <strong>${fmt(l.monthly)}</strong> into your OCBC account before the 1st (education loan)</span></div>`;});
+  if(loanShort()>0)h+=`<div class="notify-banner"><span class="nb-text">Move <strong>${fmt(loanShort())}</strong> into OCBC before the 1st (education loan)</span></div>`;
   wrap.innerHTML=h;
 }
 
