@@ -463,11 +463,11 @@ let notifGranted = localStorage.getItem('anish_notif')==='granted';
 
 // ── LOAD ──
 async function loadAll() {
-  try{await fetch(`${SUPA_URL}/rest/v1/rpc/run_loan_deductions`,{method:'POST',headers:H,body:'{}'});}catch(e){} // takes the OCBC loan off the OCBC balance once on/after the 1st
+  try{await fetch(`${SUPA_URL}/rest/v1/rpc/run_loan_deductions`,{method:'POST',headers:H,body:'{}'});}catch(e){} // takes the loan payment off the OCBC loan account once on/after the 1st
   const supaResults = await Promise.all([dbGet('items'), dbGet('earnings'), dbGet('spending'), dbGet('subscriptions'), dbGet('income_goals'), dbGet('savings_goals'), dbGet('savings_contributions'), dbGet('accounts'), dbGet('debts'), dbGet('debt_installments'), dbGet('habit_log'), dbGet('assignments'), dbGet('loans'), dbGet('transfers')]);
   [items, earnings, spending, subscriptions, incomeGoals, savingsGoals, savingsContributions, accounts, debts, installments, habitLog, assignments, loans, transfers] = supaResults;
-  loans=loans.map(l=>({...l,drawn:Number(l.drawn),monthly:Number(l.monthly)}));
-  const order=['DBS','Trust','GXS','OCBC'];
+  loans=loans.map(l=>({...l,drawn:Number(l.drawn),monthly:Number(l.monthly),monthly_contribution:l.monthly_contribution==null?null:Number(l.monthly_contribution)}));
+  const order=['DBS','Trust','GXS','OCBC','OCBC Loan'];
   accounts=accounts.map(a=>({...a,balance:Number(a.balance)})).sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   debts=debts.map(d=>({...d,total:Number(d.total),paid:Number(d.paid||0)}));
   installments=installments.map(i=>({...i,amount:Number(i.amount)}));
@@ -652,15 +652,22 @@ function subCycleDue(sub){
   return d>=PAY_DAY?new Date(start.getFullYear(),start.getMonth(),d):new Date(start.getFullYear(),start.getMonth()+1,d);
 }
 function loanUpcomingFirst(){const n=new Date();return new Date(n.getFullYear(),n.getMonth()+1,1);}
-function ocbcBalance(){const a=accounts.find(x=>x.name==='OCBC');return a?a.balance:0;}
-function loanWindow(l){ // from payday (the 8th) until the 1st: the next payment comes out of this month's pay, so it's set aside
+const LOAN_ACCT='OCBC Loan'; // OCBC Statement Savings (A/C 426001): the loan is deducted from here on the 1st
+function bankAccounts(){return accounts.filter(a=>a.name!==LOAN_ACCT);} // the loan account is set aside, so it's not in the total
+function loanAcctBalance(){const a=accounts.find(x=>x.name===LOAN_ACCT);return a?a.balance:0;}
+function loanWindow(l){ // from payday (the 8th) until the 1st: this month's top-up comes out of this month's pay, so it's set aside
   const fd=l.first_due?new Date(l.first_due+'T00:00:00'):null;
   return !!fd&&loanUpcomingFirst()>=fd&&new Date().getDate()>=PAY_DAY;
 }
-function loanShort(){ // how much more needs moving into OCBC before the 1st
-  const need=loans.filter(loanWindow).reduce((t,l)=>t+l.monthly,0);
-  return Math.max(0,need-ocbcBalance());
+function loanTarget(l){ // what goes into the loan account this month: the monthly top-up once it starts, never less than the instalment
+  const key=monthKeyOf(new Date());
+  return (l.monthly_contribution&&l.contribution_from&&key>=l.contribution_from)?Math.max(l.monthly_contribution,l.monthly):l.monthly;
 }
+function loanMoved(){ // moved into the loan account since the 2nd of this month
+  const n=new Date();const since=new Date(n.getFullYear(),n.getMonth(),2).getTime();
+  return transfers.filter(t=>t.kind==='out'&&t.account!==LOAN_ACCT&&/426001|statement savings/i.test(t.note||'')&&Number(t.ts)>=since).reduce((s,t)=>s+Number(t.amount),0);
+}
+function loanLeftToMove(){return loans.filter(loanWindow).reduce((t,l)=>t+Math.max(0,loanTarget(l)-loanMoved()),0);}
 function loanNextDue(l){
   const n=new Date();n.setHours(0,0,0,0);
   const fd=l.first_due?new Date(l.first_due+'T00:00:00'):new Date(n.getFullYear(),n.getMonth()+1,1);
@@ -675,17 +682,17 @@ function needNumbers(){
   let debt=installments.filter(i=>i.due_month===key||(i.due_month<key&&!i.paid)).reduce((t,i)=>t+i.amount,0);
   debts.filter(d=>d.kind==='owe'&&d.due_date&&d.due_date.slice(0,7)===key&&!installments.some(i=>i.debt_id===d.id)).forEach(d=>{debt+=Math.max(0,d.total-d.paid);});
   const nextFirst=new Date(now.getFullYear(),now.getMonth()+1,1);
-  const loan=loans.filter(l=>l.first_due&&nextFirst>=new Date(l.first_due+'T00:00:00')).reduce((t,l)=>t+l.monthly,0);
+  const loan=loans.filter(l=>l.first_due&&nextFirst>=new Date(l.first_due+'T00:00:00')).reduce((t,l)=>t+loanTarget(l),0);
   const spend=usualSpend();
   const earned=earnings.filter(e=>monthKeyOf(e.ts||e.id)===key).reduce((t,e)=>t+Number(e.amount),0);
   return {subs,debt,loan,spend,total:subs+debt+loan+spend,earned};
 }
 function moneyNumbers(){
-  const total=accounts.reduce((s,a)=>s+a.balance,0);
+  const total=bankAccounts().reduce((s,a)=>s+a.balance,0);
   const key=monthKeyOf(new Date());
   const dueMonth=installments.filter(i=>!i.paid&&i.due_month<=key).reduce((s,i)=>s+i.amount,0);
   const subsLeft=subsCovered()?0:subscriptions.reduce((t,x)=>t+Number(x.amount),0);
-  const loanLeft=loans.filter(loanWindow).reduce((t,l)=>t+l.monthly,0);
+  const loanLeft=loanLeftToMove();
   const owedTotal=debts.filter(d=>d.kind==='owe').reduce((s,d)=>s+Math.max(0,d.total-d.paid),0);
   return {total,dueMonth,subsLeft,owedTotal,safe:total-dueMonth-subsLeft-loanLeft,loanLeft};
 }
@@ -737,7 +744,7 @@ function renderToday(){
   const m=moneyNumbers();
   $('t-safe').textContent=(m.safe<0?'-':'')+fmt(Math.abs(m.safe));
   $('t-safe').style.color=m.safe<0?'var(--red)':'var(--text)';
-  $('t-safe-sub').textContent=`${fmt(m.total)} in the bank · ${fmt(m.dueMonth)} owed this month · ${m.subsLeft>0?fmt(m.subsLeft)+' subscriptions for the 8th':'subscriptions covered'}${m.loanLeft>0?' · '+fmt(m.loanLeft)+' loan to OCBC':''}`;
+  $('t-safe-sub').textContent=`${fmt(m.total)} in the bank · ${fmt(m.dueMonth)} owed this month · ${m.subsLeft>0?fmt(m.subsLeft)+' subscriptions for the 8th':'subscriptions covered'}${m.loanLeft>0?' · '+fmt(m.loanLeft)+' for the loan account':''}`;
 
   const dayStr=toPickerVal(viewingDate);
   const spentDay=spending.filter(s=>!s.debt_payment&&s.category!=='Subscriptions'&&toPickerVal(new Date(s.ts||s.id))===dayStr).reduce((s,e)=>s+Number(e.amount),0);
@@ -802,11 +809,11 @@ async function deleteAssignment(id){
 function renderMoneyOverview(){
   const m=moneyNumbers();
   $('ov-total').textContent=fmt(m.total);
-  $('ov-accts').innerHTML=accounts.map(a=>`<div class="acct-row" onclick="editBalance(${a.id})"><span>${a.name}</span><span class="acct-bal">${fmt(a.balance)} <span style="color:var(--text3);font-size:11px">✎</span></span></div>`).join('')||'<div class="empty">No accounts</div>';
+  $('ov-accts').innerHTML=bankAccounts().map(a=>`<div class="acct-row" onclick="editBalance(${a.id})"><span>${a.name}</span><span class="acct-bal">${fmt(a.balance)} <span style="color:var(--text3);font-size:11px">✎</span></span></div>`).join('')||'<div class="empty">No accounts</div>';
   $('ov-calc').innerHTML=`<div class="calc-row"><span>In the bank</span><span>${fmt(m.total)}</span></div>
   <div class="calc-row"><span>− Owed this month</span><span>${fmt(m.dueMonth)}</span></div>
   <div class="calc-row"><span>− Subscriptions for the 8th top-up</span><span>${fmt(m.subsLeft)}</span></div>
-  ${m.loanLeft>0?`<div class="calc-row"><span>− OCBC loan due on the 1st</span><span>${fmt(m.loanLeft)}</span></div>`:''}
+  ${m.loanLeft>0?`<div class="calc-row"><span>− Loan account top-up (before the 1st)</span><span>${fmt(m.loanLeft)}</span></div>`:''}
   <div class="calc-row total"><span>Safe to spend</span><span style="color:${m.safe<0?'var(--red)':'var(--green)'}">${m.safe<0?'-':''}${fmt(Math.abs(m.safe))}</span></div>
   <div class="calc-row" style="margin-top:8px"><span>Still owed in total</span><span>${fmt(m.owedTotal)}</span></div>
     <div class="calc-row"><span>If I cleared every debt today</span><span>${m.total-m.owedTotal<0?'-':''}${fmt(Math.abs(m.total-m.owedTotal))}</span></div>`;
@@ -825,7 +832,7 @@ function renderNeed(){
   <div style="font-size:13px;margin:8px 0;color:${left<=0?'var(--green)':'var(--text2)'}">${left<=0?'Target hit ✓':fmt(left)+' still to earn'}</div>
   <div class="calc-row"><span>Subscriptions</span><span>${fmt(n.subs)}</span></div>
   <div class="calc-row"><span>Debt payments due</span><span>${fmt(n.debt)}</span></div>
-  ${n.loan>0?`<div class="calc-row"><span>OCBC loan payment</span><span>${fmt(n.loan)}</span></div>`:''}
+  ${n.loan>0?`<div class="calc-row"><span>Loan account top-up</span><span>${fmt(n.loan)}</span></div>`:''}
   <div class="calc-row" style="cursor:pointer" onclick="editUsualSpend()"><span>Usual spending <span style="color:var(--text3);font-size:11px">✎</span></span><span>${fmt(n.spend)}</span></div>
   <div class="card-sub" style="margin-top:6px">Counts income logged this month (Wingstop after CPF).</div>`;
 }
@@ -840,19 +847,21 @@ function renderLoan(){
     return `<div class="card-label">${l.name}</div>
     <div style="display:flex;justify-content:space-between;align-items:baseline"><div class="card-value" style="font-size:22px">${fmt(l.monthly)}<span style="font-size:12px;color:var(--text3);font-weight:400"> /month${l.monthly_is_estimate?' (estimate)':''}</span></div></div>
     <div class="calc-row" style="margin-top:6px"><span>Drawn so far</span><span>${fmt(l.drawn)}</span></div>
-    <div class="calc-row"><span>Next deduction (OCBC account)</span><span>${ds} · ${days} day${days===1?'':'s'}</span></div>
-    <div class="calc-row"><span>In OCBC now</span><span>${fmt(ocbcBalance())}</span></div>
-    ${loanWindow(l)?(loanShort()>0?`<div class="calc-row"><span style="color:var(--orange)">Move ${fmt(loanShort())} more into OCBC before the 1st</span><span></span></div>`:`<div class="calc-row"><span style="color:var(--green)">OCBC has enough for the 1st ✓</span><span></span></div>`):''}
+    <div class="calc-row"><span>Next deduction (loan account)</span><span>${ds} · ${days} day${days===1?'':'s'}</span></div>
+    <div class="calc-row" style="cursor:pointer" onclick="${accounts.find(a=>a.name===LOAN_ACCT)?`editBalance(${accounts.find(a=>a.name===LOAN_ACCT).id})`:''}"><span>In loan account (426001) <span style="color:var(--text3);font-size:11px">✎</span></span><span>${fmt(loanAcctBalance())}</span></div>
+    <div class="calc-row"><span>Top-up this month</span><span>${fmt(loanMoved())} of ${fmt(loanTarget(l))}</span></div>
+    ${loanWindow(l)?(loanLeftToMove()>0?`<div class="calc-row"><span style="color:var(--orange)">Move ${fmt(loanLeftToMove())} more into the loan account before the 1st</span><span></span></div>`:`<div class="calc-row"><span style="color:var(--green)">Topped up for the 1st ✓</span><span></span></div>`):''}
     ${l.rate?`<div class="calc-row"><span>Rate / term</span><span>${l.rate}% · ${l.months} months</span></div>`:''}
-    <div style="display:flex;gap:6px;margin-top:10px"><button class="mini-btn ghost" onclick="editLoan(${l.id},'drawn')">Update drawn amount</button><button class="mini-btn ghost" onclick="editLoan(${l.id},'monthly')">Set real monthly</button></div>`;
+    <div style="display:flex;gap:6px;margin-top:10px"><button class="mini-btn ghost" onclick="editLoan(${l.id},'drawn')">Update drawn amount</button><button class="mini-btn ghost" onclick="editLoan(${l.id},'monthly')">Set real monthly</button><button class="mini-btn ghost" onclick="editLoan(${l.id},'monthly_contribution')">Monthly top-up</button></div>`;
   }).join('');
 }
 async function editLoan(id,field){
   const l=loans.find(x=>x.id===id);if(!l)return;
-  const v=parseFloat(prompt(field==='drawn'?'Total drawn down so far ($)?':'Monthly instalment OCBC confirmed ($)?',l[field]));
+  const v=parseFloat(prompt(field==='drawn'?'Total drawn down so far ($)?':field==='monthly_contribution'?'How much do you put into the loan account each month ($)?':'Monthly instalment OCBC confirmed ($)?',l[field]??''));
   if(isNaN(v)||v<0)return;
   l[field]=v;const patch={[field]:v};
   if(field==='monthly'){l.monthly_is_estimate=false;patch.monthly_is_estimate=false;}
+  else if(field==='monthly_contribution'){if(!l.contribution_from){l.contribution_from=monthKeyOf(new Date());patch.contribution_from=l.contribution_from;}}
   else if(l.monthly_is_estimate&&l.rate&&l.months){ // re-estimate from new drawn amount
     const r=l.rate/1200;l.monthly=Math.round(v*r/(1-Math.pow(1+r,-l.months))*100)/100;patch.monthly=l.monthly;
   }
@@ -1231,7 +1240,7 @@ function checkSubsDue(){
     if(day<PAY_DAY)h+=`<div class="notify-banner"><span class="nb-text">Payday top-up: put <strong>${fmt(total)}</strong> into Maybank on the ${ord(PAY_DAY)} (${PAY_DAY-day} day${PAY_DAY-day===1?'':'s'} to go)</span></div>`;
     else if(day===PAY_DAY)h+=`<div class="notify-banner"><span class="nb-text">Today: top up Maybank with <strong>${fmt(total)}</strong> for this month's subscriptions</span></div>`;
   }
-  if(loanShort()>0)h+=`<div class="notify-banner"><span class="nb-text">Move <strong>${fmt(loanShort())}</strong> into OCBC before the 1st (education loan)</span></div>`;
+  if(loanLeftToMove()>0)h+=`<div class="notify-banner"><span class="nb-text">Move <strong>${fmt(loanLeftToMove())}</strong> into your OCBC loan account (426001) before the 1st</span></div>`;
   wrap.innerHTML=h;
 }
 
